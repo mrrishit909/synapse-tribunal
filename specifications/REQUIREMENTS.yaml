@@ -21,16 +21,21 @@ requirements:
     priority: P0
     behavior: "Switch model"
     owner: frontend
-    status: unstarted
-    verification: []
-    evidence_paths: []
+    status: tested
+    note: "Boosting shows its own real precomputed probability; no live evaluator exists
+      for it (see docs/LIMITATIONS.md), so switching clears any active perturbation
+      rather than showing a stale or fabricated result."
+    verification: ["unit:vitest:src/scenes/Tribunal.test.tsx", "e2e:playwright:e2e/tribunal.spec.ts"]
+    evidence_paths: ["src/scenes/Tribunal.tsx"]
   - id: SYN-INT-003
     priority: P0
     behavior: "Change threshold"
     owner: frontend
-    status: unstarted
-    verification: []
-    evidence_paths: []
+    status: tested
+    note: "Drives verdict + a real confusion/precision/recall lookup against
+      threshold_sweep.json (99 rows, full 9045-row test set) for the active model."
+    verification: ["unit:vitest:src/scenes/Tribunal.test.tsx", "e2e:playwright:e2e/tribunal.spec.ts"]
+    evidence_paths: ["src/scenes/Tribunal.tsx", "public/data/precomputed/threshold_sweep.json"]
   - id: SYN-INT-004
     priority: P0
     behavior: "Perturb valid feature (+ feasible-flip counterfactual search)"
@@ -50,17 +55,19 @@ requirements:
     priority: P0
     behavior: "View calibration"
     owner: frontend
-    status: unstarted
-    note: "Fixture (public/data/precomputed/calibration.json) exists and is tested; no UI."
-    verification: ["unit:pytest:test_calibration_bins_cover_test_set"]
-    evidence_paths: ["public/data/precomputed/calibration.json"]
+    status: tested
+    note: "10 real reliability bins as clickable chips; empty bins show an honest 'no
+      test cases fell in this range' rather than a broken chart."
+    verification: ["unit:pytest:test_calibration_bins_cover_test_set",
+      "unit:vitest:src/scenes/Tribunal.test.tsx", "e2e:playwright:e2e/tribunal.spec.ts"]
+    evidence_paths: ["public/data/precomputed/calibration.json", "src/scenes/Tribunal.tsx"]
   - id: SYN-INT-006
     priority: P0
     behavior: "Compare explanations (two cases, logistic model only -- see SPEC_LOCK.md)"
     owner: frontend
-    status: unstarted
-    verification: []
-    evidence_paths: []
+    status: tested
+    verification: ["unit:vitest:src/scenes/Tribunal.test.tsx", "e2e:playwright:e2e/tribunal.spec.ts"]
+    evidence_paths: ["src/scenes/Tribunal.tsx"]
 
 gates:
   - id: SYN-DATA-001
@@ -75,9 +82,10 @@ gates:
       "65 pytest + 12 vitest passing, full-test-set parity <1e-4"]
   - id: SYN-UX-001
     description: "Six working controls + keyboard/touch/reset, recorded e2e tests."
-    status: in_progress
-    evidence: ["2/6 controls independently verified (SYN-INT-001, SYN-INT-004);
-      4/6 remaining (SYN-INT-002, 003, 005, 006)"]
+    status: implemented
+    evidence: ["6/6 controls implemented and unit+e2e tested; 2/6 (SYN-INT-001, 004)
+      independently reviewed by a worktree-isolated agent, 4/6 (SYN-INT-002/003/005/006)
+      not yet independently reviewed -- pending the full-integration review in task #11"]
   - id: SYN-MOTION-001
     description: "Intro and all six chapter captures, reverse-scroll and reduced-motion tests."
     status: unstarted
