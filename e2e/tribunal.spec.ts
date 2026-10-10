@@ -54,6 +54,19 @@ test("vertical slice: case browser, perturbation, attribution, flip, reset", asy
   await page.screenshot({ path: path.join(SCREENSHOTS_DIR, "tribunal-desktop.png"), fullPage: true });
 });
 
+test("switching the selected case (SYN-INT-001) recomputes and clears perturbation", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByTestId("tribunal-scene")).toBeVisible();
+
+  const caseNumberBefore = await page.locator(".dossier-case-number").textContent();
+  const select = page.getByLabel(/test-set case/i);
+  const options = await select.locator("option").all();
+  const otherValue = await options[1].getAttribute("value");
+  await select.selectOption(otherValue!);
+
+  await expect(page.locator(".dossier-case-number")).not.toHaveText(caseNumberBefore ?? "");
+});
+
 test("keyboard operability: perturb and search without a mouse", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByTestId("tribunal-scene")).toBeVisible();

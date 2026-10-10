@@ -78,7 +78,12 @@ def search_categorical(raw: dict, feature: str, threshold: float) -> dict:
     if not candidates:
         return {"feasible": False, "feature": feature, "reason":
                 "no observed category for this feature flips the decision"}
-    best = max(candidates, key=lambda c: abs(c["resulting_proba"] - threshold))
+    # Minimal change: the candidate whose resulting probability is CLOSEST to the
+    # threshold (just barely flips it), matching search_numeric's bisection-to-the-
+    # boundary semantics. An earlier version picked the farthest/most-decisive
+    # candidate instead, silently diverging from SPEC_LOCK.md's "minimal-change path"
+    # description; fixed, not just relabeled.
+    best = min(candidates, key=lambda c: abs(c["resulting_proba"] - threshold))
     return {"feasible": True, "feature": feature, "from_value": current,
             "to_value": best["category"], "resulting_proba": best["resulting_proba"]}
 

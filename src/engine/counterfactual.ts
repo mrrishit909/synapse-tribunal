@@ -102,8 +102,11 @@ function searchCategorical(
       reason: 'no observed category for this feature flips the decision',
     }
   }
+  // Minimal change: the candidate CLOSEST to the threshold, matching searchNumeric's
+  // bisection-to-the-boundary semantics (an earlier version picked the farthest/most-
+  // decisive candidate, silently diverging from SPEC_LOCK.md's "minimal-change path").
   const best = candidates.reduce((a, b) =>
-    Math.abs(a.resulting_proba - threshold) >= Math.abs(b.resulting_proba - threshold) ? a : b,
+    Math.abs(a.resulting_proba - threshold) <= Math.abs(b.resulting_proba - threshold) ? a : b,
   )
   return {
     feasible: true,

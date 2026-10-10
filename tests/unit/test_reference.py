@@ -98,6 +98,37 @@ def test_counterfactual_categorical_infeasible_reports_reason_not_crash():
         assert "reason" in result
 
 
+def test_counterfactual_categorical_returns_minimal_not_most_decisive_flip():
+    """Regression test for a real bug an independent review caught: the categorical
+    search once picked the candidate FARTHEST from the threshold (the most decisive
+    flip) instead of the closest (the minimal change), silently diverging from
+    SPEC_LOCK.md's own 'minimal-change path' description. Brute-forces every observed
+    category independently of find_feasible_flip's own implementation."""
+    for row in SAMPLE_FIXTURE["rows"][:40]:
+        raw = row["raw"]
+        for feature in ("workclass", "occupation"):
+            threshold = 0.5
+            current_pred = logistic_proba(raw) >= threshold
+            flipping = []
+            for cat in MANIFEST["categorical_categories"][feature]:
+                if cat == raw[feature]:
+                    continue
+                trial = {**raw, feature: cat}
+                p = logistic_proba(trial)
+                if (p >= threshold) != current_pred:
+                    flipping.append((cat, p))
+            result = find_feasible_flip(raw, feature, threshold=threshold)
+            if not flipping:
+                assert not result["feasible"]
+                continue
+            expected_best = min(flipping, key=lambda cp: abs(cp[1] - threshold))
+            assert result["feasible"]
+            assert result["to_value"] == expected_best[0], (
+                f"{feature}: expected minimal-change category {expected_best[0]!r}, "
+                f"got {result['to_value']!r}"
+            )
+
+
 def test_scaler_mean_is_train_only_not_full_dataset():
     """Leakage guard: the manifest's StandardScaler mean must equal the TRAIN split's own
     mean, not a mean computed over train+test (which would leak test distribution info

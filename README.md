@@ -1,32 +1,42 @@
-# React + TypeScript + Vite
+# Synapse Tribunal
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+A prediction, placed on trial: real classifier attribution, counterfactual search, and
+contradictory-case evidence, computed live in the browser against a model trained offline.
 
-Currently, two official plugins are available:
+Project 03 of the Creative Engineering Atlas. See `specifications/SPEC_LOCK.md` for the
+authoritative spec decisions, `specifications/REQUIREMENTS.yaml` for current build status, and
+`docs/LIMITATIONS.md` for what this build does and does not do right now.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+**Current state:** one feature slice built and independently reviewed (SYN-INT-001 select case,
+SYN-INT-004 perturb + single-feature counterfactual search). The remaining four interactions,
+six narrative chapters, and cinematic intro are not yet built.
 
-## React Compiler
+## Run it
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
+npm run dev          # local dev server
+npm run build        # tsc -b && vite build
+npm run preview       # serve the production build locally
+npm run test          # vitest
+npm run test:e2e      # playwright, against the production build
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+The analytical engine (dataset fetch, model training, fixture export) is Python, in a separate
+venv:
+
+```bash
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+export SSL_CERT_FILE=$(.venv/bin/python -c "import certifi; print(certifi.where())")
+.venv/bin/python -I research/ingest/fetch_adult.py   # fetches data/raw/adult_raw.csv
+.venv/bin/python -I research/models/train.py          # trains both models, exports fixtures
+.venv/bin/python -I -m pytest tests/unit -q            # reference-engine test suite
+```
+
+## Stack
+
+React + TypeScript + Vite, GSAP for motion, scikit-learn for the offline reference models, a
+manifest-driven TypeScript port of the logistic model for live in-browser recomputation
+(`src/engine/`), Playwright + Vitest + pytest for testing. See `docs/ARCHITECTURE.md` once it
+exists (not yet written at this stage of the build).

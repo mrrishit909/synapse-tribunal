@@ -198,6 +198,11 @@ input:focus-visible {
   border-top: 1px dotted var(--ink-line);
   padding-top: 14px;
 }
+.flip-scope-note {
+  font-size: 0.78rem;
+  color: var(--paper-dim);
+  margin-top: 10px;
+}
 .flip-result {
   margin-top: 12px;
   padding: 10px;

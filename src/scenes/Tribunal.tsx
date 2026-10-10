@@ -280,19 +280,26 @@ export default function Tribunal() {
             Search
           </button>
         </div>
+        <p className="flip-scope-note">
+          This searches changes to <strong>one feature at a time</strong>, the one selected above,
+          with every other value held fixed. It is not a search across every feature at once, so a
+          combination of smaller changes across several features may exist even when this search
+          reports none.
+        </p>
         {flipResult && (
           <p className="flip-result" role="status">
             {flipResult.feasible ? (
               <>
-                Feasible: changing {featureLabel(flipResult.feature)} to{' '}
-                <strong>{formatValue(flipResult.to_value)}</strong> would flip the decision (resulting
-                probability {formatProbability(flipResult.resulting_proba)}).{' '}
+                Changing only {featureLabel(flipResult.feature)} to{' '}
+                <strong>{formatValue(flipResult.to_value)}</strong>, with every other feature held
+                fixed, would flip the decision (resulting probability{' '}
+                {formatProbability(flipResult.resulting_proba)}).{' '}
                 <button type="button" onClick={handleApplyFlip}>
                   Apply this flip
                 </button>
               </>
             ) : (
-              <>Infeasible: {flipResult.reason}</>
+              <>No single-feature flip found: {flipResult.reason}</>
             )}
           </p>
         )}

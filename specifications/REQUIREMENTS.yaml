@@ -10,9 +10,13 @@ requirements:
     source: "Atlas executable contract p.92; dossier Build Book p.13"
     behavior: "Select case"
     owner: frontend
-    status: unstarted
-    verification: []
-    evidence_paths: []
+    status: tested
+    note: "Implemented in Tribunal.tsx ('01: Select a case'). An independent review
+      found this ledger row incorrectly marked unstarted with no test coverage despite
+      being fully built; fixed on both counts (status here, coverage below)."
+    verification: ["unit:vitest:src/scenes/Tribunal.test.tsx (case-switch test)",
+      "e2e:playwright:e2e/tribunal.spec.ts (SYN-INT-001 case-switch test)"]
+    evidence_paths: ["src/scenes/Tribunal.tsx", "src/scenes/Tribunal.test.tsx", "e2e/tribunal.spec.ts"]
   - id: SYN-INT-002
     priority: P0
     behavior: "Switch model"

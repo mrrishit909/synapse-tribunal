@@ -54,6 +54,35 @@ describe('findFeasibleFlip: categorical actionable feature', () => {
       expect(manifest.categorical_categories['workclass']).toContain(result.to_value)
     }
   })
+
+  it('returns the minimal-change flip, not the most decisive one (regression test)', () => {
+    // An earlier version picked the candidate FARTHEST from the threshold instead of
+    // closest, silently diverging from SPEC_LOCK.md's "minimal-change path" claim.
+    // Brute-forces independently of findFeasibleFlip's own implementation.
+    const threshold = 0.5
+    for (const row of fixture.rows.slice(0, 40)) {
+      for (const feature of ['workclass', 'occupation']) {
+        const currentPred = logisticProba(manifest, row.raw) >= threshold
+        const flipping: { cat: string; proba: number }[] = []
+        for (const cat of manifest.categorical_categories[feature]) {
+          if (cat === row.raw[feature]) continue
+          const trial = { ...row.raw, [feature]: cat }
+          const p = logisticProba(manifest, trial)
+          if ((p >= threshold) !== currentPred) flipping.push({ cat, proba: p })
+        }
+        const result = findFeasibleFlip(manifest, row.raw, feature, threshold)
+        if (flipping.length === 0) {
+          expect(result.feasible).toBe(false)
+          continue
+        }
+        const expectedBest = flipping.reduce((a, b) =>
+          Math.abs(a.proba - threshold) <= Math.abs(b.proba - threshold) ? a : b,
+        )
+        expect(result.feasible).toBe(true)
+        if (result.feasible) expect(result.to_value).toBe(expectedBest.cat)
+      }
+    }
+  })
 })
 
 describe('findFeasibleFlip: immutable feature rejection', () => {

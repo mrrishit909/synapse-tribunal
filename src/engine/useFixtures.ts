@@ -23,6 +23,11 @@ export function useFixtures(): FixturesState & { retry: () => void } {
 
   useEffect(() => {
     let cancelled = false
+    // This IS synchronizing with an external system (fetch), the canonical case the
+    // rule's own message carves out as fine. Suppressed rather than worked around so
+    // future fixture-loading hooks aren't tempted to copy an awkward workaround instead
+    // of this same legitimate pattern.
+    // oxlint-disable-next-line react/set-state-in-effect
     setState({ status: 'loading' })
     const base = import.meta.env.BASE_URL
     Promise.all([

@@ -19,7 +19,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from sklearn.calibration import calibration_curve
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.neighbors import NearestNeighbors
@@ -160,8 +159,11 @@ def main() -> None:
     }
 
     # Calibration cohorts (SYN-INT-005): real bins over the real test set, both models.
+    # Hand-rolled rather than sklearn's calibration_curve because the UI needs each bin's
+    # raw n/mean/observed_rate (not just the curve points calibration_curve returns), and
+    # calibration_curve silently drops empty bins -- the UI needs to render those as "no
+    # test cases fell in this probability range" (INTERACTIONS.yaml) rather than skip them.
     def calib(proba: np.ndarray) -> list[dict]:
-        frac_pos, mean_pred = calibration_curve(y_test, proba, n_bins=10, strategy="uniform")
         out = []
         edges = np.linspace(0, 1, 11)
         for i in range(10):

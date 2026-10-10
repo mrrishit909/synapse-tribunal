@@ -59,7 +59,7 @@ describe('Tribunal scene (SYN-INT-004 vertical slice)', () => {
     })
     const result = document.querySelector('.flip-result')
     expect(result).toBeTruthy()
-    expect(result!.textContent).toMatch(/feasible|infeasible/i)
+    expect(result!.textContent).toMatch(/would flip the decision|no single-feature flip found/i)
   })
 
   it('rejects perturbing an immutable feature from the UI (none rendered for them)', async () => {
@@ -73,5 +73,31 @@ describe('Tribunal scene (SYN-INT-004 vertical slice)', () => {
     render(<Tribunal />)
     await waitFor(() => expect(screen.getByTestId('tribunal-scene')).toBeInTheDocument())
     expect(screen.getByText(/contradictory case/i)).toBeInTheDocument()
+  })
+
+  it('switching the selected case recomputes the panel and clears any active perturbation (SYN-INT-001)', async () => {
+    render(<Tribunal />)
+    await waitFor(() => expect(screen.getByTestId('tribunal-scene')).toBeInTheDocument())
+
+    const caseNumberBefore = screen.getByText(/CASE No\./i).textContent
+    const probabilityBefore = screen.getByText(/Probability of exceeding/i).textContent
+
+    const slider = screen.getByLabelText(/hours worked/i)
+    fireEvent.change(slider, { target: { value: '5' } })
+    await waitFor(() => {
+      expect(screen.getByText(/recomputed live after your edit/i)).toBeInTheDocument()
+    })
+
+    const select = screen.getByLabelText(/test-set case/i) as HTMLSelectElement
+    const otherOption = Array.from(select.options).find((o) => o.value !== select.value)!
+    fireEvent.change(select, { target: { value: otherOption.value } })
+
+    await waitFor(() => {
+      expect(screen.getByText(/CASE No\./i).textContent).not.toBe(caseNumberBefore)
+    })
+    // Switching cases must clear the perturbation from the previous case, not carry
+    // a stale "recomputed live" state into a fresh case selection.
+    expect(screen.queryByText(/recomputed live after your edit/i)).not.toBeInTheDocument()
+    expect(screen.getByText(/Probability of exceeding/i).textContent).not.toBe(probabilityBefore)
   })
 })
