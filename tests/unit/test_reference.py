@@ -20,9 +20,9 @@ CALIB = json.loads((ROOT / "public" / "data" / "precomputed" / "calibration.json
 
 
 def test_manifest_has_both_models():
-    assert "logistic" in MANIFEST and "forest" in MANIFEST
+    assert "logistic" in MANIFEST and "boosting" in MANIFEST
     assert MANIFEST["logistic"]["test_metrics"]["auroc"] > 0.85
-    assert MANIFEST["forest"]["test_metrics"]["auroc"] > 0.85
+    assert MANIFEST["boosting"]["test_metrics"]["auroc"] > 0.85
 
 
 def test_reference_math_matches_sklearn_proba_on_entire_test_set():
@@ -55,14 +55,14 @@ def test_attribution_sums_to_logit_delta(row):
 
 def test_confusion_counts_sum_to_n_test_every_threshold():
     n_test = MANIFEST["logistic"]["test_metrics"]["n_test"]
-    for model in ("logistic", "forest"):
+    for model in ("logistic", "boosting"):
         for row in SWEEP[model]:
             assert row["tp"] + row["fp"] + row["tn"] + row["fn"] == n_test
 
 
 def test_calibration_bins_cover_test_set():
     n_test = MANIFEST["logistic"]["test_metrics"]["n_test"]
-    for model in ("logistic", "forest"):
+    for model in ("logistic", "boosting"):
         assert sum(b["n"] for b in CALIB[model]) == n_test
 
 
@@ -96,6 +96,57 @@ def test_counterfactual_categorical_infeasible_reports_reason_not_crash():
     assert result["feasible"] in (True, False)
     if not result["feasible"]:
         assert "reason" in result
+
+
+def test_scaler_mean_is_train_only_not_full_dataset():
+    """Leakage guard: the manifest's StandardScaler mean must equal the TRAIN split's own
+    mean, not a mean computed over train+test (which would leak test distribution info
+    into every prediction)."""
+    from research.models.train import NUM_FEATURES, load, train_test_split, SEED
+
+    df = load()
+    X = df[list(df.columns.drop("label"))]
+    y = df["label"].to_numpy()
+    X_train, _, _, _ = train_test_split(X, y, test_size=0.2, stratify=y, random_state=SEED)
+    recomputed_mean = X_train[NUM_FEATURES].mean().to_numpy()
+    manifest_mean = MANIFEST["numeric_scaler"]["mean"]
+    for a, b in zip(recomputed_mean, manifest_mean):
+        assert math.isclose(a, b, rel_tol=1e-6)
+
+
+def test_leakage_check_is_disclosed_in_manifest():
+    check = MANIFEST["leakage_check"]
+    assert check["n_test"] == MANIFEST["logistic"]["test_metrics"]["n_test"]
+    assert 0 <= check["exact_duplicate_test_rows_present_in_train"] <= check["n_test"]
+
+
+def test_grouped_attribution_sums_match_ungrouped_sum():
+    """Additivity of linear SHAP: summing one-hot columns back to their raw feature must
+    not change the total (grouping is a display aggregation, not a second approximation)."""
+    for row in SAMPLE_FIXTURE["rows"][:30]:
+        ungrouped_sum = sum(row["logistic_attribution"])
+        grouped_sum = sum(row["logistic_attribution_by_feature"].values())
+        assert math.isclose(ungrouped_sum, grouped_sum, abs_tol=1e-4)
+
+
+def test_contradictory_case_present_and_carries_opposite_label():
+    for row in SAMPLE_FIXTURE["rows"][:30]:
+        cc = row["contradictory_case"]
+        assert cc["label"] == 1 - row["label"]
+        # Zero differing features is allowed and is in fact the strongest possible
+        # evidence this chapter can show: an identical profile with the opposite real
+        # outcome. It must not be filtered out as if it were a bug.
+        assert len(cc["differing_features"]) >= 0
+
+
+def test_counterfactual_integer_snap_never_returns_a_fractional_value():
+    row = FIXTURE["rows"][0]["raw"]
+    for feature in ("hours-per-week", "education-num", "capital-gain", "capital-loss"):
+        result = find_feasible_flip(row, feature, threshold=0.5)
+        if result["feasible"]:
+            assert float(result["to_value"]).is_integer(), (
+                f"{feature} flip returned a fractional value: {result['to_value']}"
+            )
 
 
 def test_out_of_domain_numeric_input_does_not_silently_succeed():

@@ -16,7 +16,7 @@ export interface LogisticManifest {
   attribution_method: string
 }
 
-export interface ForestManifest {
+export interface BoostingManifest {
   cv_auroc_folds: number[]
   cv_auroc_mean: number
   test_metrics: ModelMetrics
@@ -35,21 +35,35 @@ export interface ModelManifest {
   categorical_categories: Record<string, string[]>
   transformed_feature_order: string[]
   logistic: LogisticManifest
-  forest: ForestManifest
+  boosting: BoostingManifest
   numeric_observed_bounds: Record<string, [number, number]>
+  leakage_check: {
+    exact_duplicate_test_rows_present_in_train: number
+    n_test: number
+    note: string
+  }
 }
 
 /** A raw case: every manifest.feature_order_raw key, numeric features as numbers,
  * categorical features as their string category. */
 export type RawCase = Record<string, number | string>
 
+export interface ContradictoryCase {
+  distance_in_transformed_space: number
+  label: 0 | 1
+  raw: RawCase
+  differing_features: string[]
+}
+
 export interface TestFixtureRow {
   id: number
   raw: RawCase
   label: 0 | 1
   logistic_proba: number
-  forest_proba: number
+  boosting_proba: number
   logistic_attribution: number[]
+  logistic_attribution_by_feature: Record<string, number>
+  contradictory_case: ContradictoryCase
 }
 
 export interface TestFixture {
@@ -71,7 +85,7 @@ export interface ThresholdRow {
 
 export interface ThresholdSweep {
   logistic: ThresholdRow[]
-  forest: ThresholdRow[]
+  boosting: ThresholdRow[]
 }
 
 export interface CalibrationBin {
@@ -84,7 +98,7 @@ export interface CalibrationBin {
 
 export interface CalibrationFixture {
   logistic: CalibrationBin[]
-  forest: CalibrationBin[]
+  boosting: CalibrationBin[]
 }
 
 export type CounterfactualResult =

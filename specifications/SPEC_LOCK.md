@@ -12,7 +12,7 @@ they conflict; the dossier fills in meaning where the contract is terse.
 | Contract ID | Contract behavior | Dossier flavor text | Locked meaning |
 |---|---|---|---|
 | SYN-INT-001 | Select case | "select sample > recompute display > dossier" | Pick a test-set case; recomputes its prediction, probability, and attribution panel. |
-| SYN-INT-002 | Switch model | "Choose model > swap genuine predictions > evidence" | Toggle between the two real trained classifiers (logistic regression, gradient-boosted forest); recomputes the same case's prediction under the other model. |
+| SYN-INT-002 | Switch model | "Choose model > swap genuine predictions > evidence" | Toggle between the two real trained classifiers (logistic regression, gradient-boosted boosting); recomputes the same case's prediction under the other model. |
 | SYN-INT-003 | Change threshold | "change threshold > confusion counts > precision/recall" | Slider over decision threshold; recomputes confusion-matrix counts and precision/recall live from the held-out test set. |
 | SYN-INT-004 | Perturb valid feature | "perturb allowed feature > model inference/fixture > probabilities" | Edit one actionable feature within its valid domain; live TS model evaluation recomputes probability + attribution. This is the flagship interaction, see below. |
 | SYN-INT-005 | View calibration | "inspect probability bin > draw calibration cohorts" | Click/select a probability bin; shows the real cohort of test cases in that bin and their observed outcome rate (reliability diagram). |
@@ -27,14 +27,19 @@ dossier's "Methods" section names "valid counterfactual constraints" as a requir
 Validation section requires a test for "plausible counterfactual constraints." Dropping it would
 violate a named analytical requirement.
 
-**Resolution:** INT-006 is implemented as "compare explanations", selecting two cases (or a case
-under both models) and diffing their attribution bars side by side, the literal reading of the
-contract ID. Counterfactual search is folded into **INT-004** as its second mode: after perturbing
-a feature, a "find nearest feasible flip" action runs a real constrained search (only actionable
-features move, values stay in observed-domain bounds) and returns the minimal-change path that
-would cross the decision threshold, or "no feasible flip within bounds" if none exists. This keeps
-all 6 contract IDs literal while still shipping the dossier's mandatory counterfactual method,
-and it reuses INT-004's live TS evaluator rather than requiring a second one.
+**Resolution (revised after review):** INT-006 is implemented as "compare explanations" between
+**two selected cases under the logistic model only**, diffing their per-feature attribution bars
+side by side. The earlier draft of this lock also offered "a case under both models" as a second
+mode; that mode is dropped because it is not implementable honestly: the boosting model has no
+per-case attribution (`attribution_available: false`, see `model_manifest.json`), so there is
+nothing real to diff it against. Showing a fabricated attribution for the boosting model to fill
+that mode would violate the project's own labeling rule. Counterfactual search is folded into
+**INT-004** as its second mode: after perturbing a feature, a "find nearest feasible flip" action
+runs a real constrained search (only actionable features move, values stay in observed-domain
+bounds, integer features snap to an integer and are re-verified) and returns the minimal-change
+path that would cross the decision threshold, or an honest infeasibility reason if none exists.
+This keeps all 6 contract IDs literal while still shipping the dossier's mandatory counterfactual
+method, and reuses INT-004's live TS evaluator rather than requiring a second one.
 
 ## 2. Visual identity conflict
 

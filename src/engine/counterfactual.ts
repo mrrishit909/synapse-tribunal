@@ -45,7 +45,26 @@ function searchNumeric(
     else b = mid
     if (Math.abs(b - a) < tol * Math.max(1, Math.abs(hi - lo))) break
   }
-  const flipValue = b
+  let flipValue = b
+  if (manifest.numeric_scaler.features.includes(feature)) {
+    // Every numeric feature in this dataset is integer-valued in the raw source; snap to
+    // the integer on the side of flipValue that keeps the decision flipped, re-checking
+    // rather than assuming, and step outward one more unit if the snap rounds back over
+    // the boundary.
+    let snapped = b > a ? Math.ceil(flipValue) : Math.floor(flipValue)
+    if (predAt(snapped) === currentPred) snapped = b > a ? snapped + 1 : snapped - 1
+    if (snapped >= lo && snapped <= hi && predAt(snapped) !== currentPred) {
+      flipValue = snapped
+    } else {
+      return {
+        feasible: false,
+        feature,
+        reason:
+          'no integer value within the observed training range flips the decision ' +
+          '(a fractional flip exists but this feature is integer-valued)',
+      }
+    }
+  }
   return {
     feasible: true,
     feature,

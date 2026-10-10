@@ -1,0 +1,111 @@
+# Interaction state machines (Gate G1 requirement). Full input/state/output/error/reset per
+# control, plus the cross-control rules that the six controls' interactions force a decision
+# on. Companion to specifications/SPEC_LOCK.md (which resolves ID/scope conflicts) and
+# specifications/DATA_CONTRACT.yaml (which resolves feature actionability).
+
+shared_state:
+  selected_case_id: "integer id into test_fixture.json rows; initial = first sample row"
+  active_model: "logistic | boosting; initial = logistic"
+  threshold: "float in [0.01, 0.99], step 0.01 (matches threshold_sweep.json's 99 steps exactly, no interpolation between steps); initial = 0.50"
+  perturbation: "null | { feature: string, value: number|string }; initial = null"
+  comparison_case_id: "integer | null, second case for SYN-INT-006; initial = null"
+
+cross_control_rules:
+  - rule: "A perturbation is only ever evaluated against the logistic model, never the boosting model."
+    reason: "The boosting model's live evaluator was never built (no TS port of
+      HistGradientBoostingClassifier's tree internals -- its tree structure is not public
+      sklearn API the way logistic regression's coefficients are). Building one was
+      evaluated and explicitly deferred, not silently dropped -- see LIMITATIONS.md."
+    behavior: "Switching the active model (SYN-INT-002) while a perturbation is active
+      clears the perturbation and shows 'perturbation reset: only evaluated against the
+      logistic model.' The boosting model is never shown an attribution or a perturbed-case
+      probability it did not actually compute."
+  - rule: "Threshold (SYN-INT-003) is shared by the verdict display, the confusion-matrix
+      panel, and the counterfactual search target in SYN-INT-004."
+    behavior: "Changing the threshold slider recomputes all three from the already-exported
+      threshold_sweep.json lookup (confusion/precision/recall) plus a live
+      logisticProba(...) >= threshold check (verdict, counterfactual target). The slider
+      snaps to the nearest 0.01 step; no interpolation between exported threshold rows."
+  - rule: "SYN-INT-006 (compare explanations) only ever diffs two cases under the logistic
+      model. See SPEC_LOCK.md section 1 for why the boosting-model mode was dropped."
+    behavior: "Selecting a comparison case shows both cases' logistic_attribution_by_feature
+      side by side. If the comparison case is the same as the selected case, show
+      'select a different case to compare' instead of a degenerate zero-diff."
+  - rule: "Out-of-domain / impossible feature edits."
+    behavior: "SYN-INT-004's perturbation input is clamped to
+      model_manifest.json numeric_observed_bounds for numeric features and restricted to
+      categorical_categories for categorical features -- the UI never lets the user submit
+      a value the reference engine's own bounds-checking test
+      (test_out_of_domain_numeric_input_does_not_silently_succeed) documents as unchecked
+      at the math layer. Immutable features (age, marital-status, relationship, race, sex,
+      native-country) render read-only with a 'not editable: not an actionable feature in
+      this model' tooltip, never a disabled-looking-but-technically-clickable control."
+
+controls:
+  - id: SYN-INT-001
+    name: "Select case"
+    input: "case_id from the ~300-row sample in test_fixture.json"
+    given: "any valid case_id in the loaded fixture"
+    when: "case selected"
+    then: "selected_case_id updates; prediction/probability/attribution panel recomputes from
+      that case's precomputed fixture values (not live-recomputed, since no feature changed)"
+    invalid_input: "case_id not in fixture -> show 'case not found', keep prior selection"
+    reset: "returns to the first sample row"
+  - id: SYN-INT-002
+    name: "Switch model"
+    input: "active_model: logistic | boosting"
+    then: "shows that model's test_metrics and the current case's precomputed probability
+      under that model; clears any active perturbation per cross_control_rules above"
+    reset: "active_model = logistic"
+  - id: SYN-INT-003
+    name: "Change threshold"
+    input: "threshold in [0.01, 0.99], step 0.01"
+    then: "confusion/precision/recall panel and verdict badge recompute from
+      threshold_sweep.json; counterfactual search target updates"
+    invalid_input: "out-of-range value clamps to [0.01, 0.99]"
+    reset: "threshold = 0.50"
+  - id: SYN-INT-004
+    name: "Perturb valid feature (+ find feasible flip)"
+    input: "feature in actionable_numeric|actionable_categorical; value within observed
+      bounds/categories"
+    then: "live TypeScript logisticProba + logisticAttribution recompute (src/engine/model.ts);
+      'find feasible flip' runs findFeasibleFlip (src/engine/counterfactual.ts) against the
+      current threshold"
+    invalid_input: "value outside numeric_observed_bounds is clamped before evaluation, never
+      silently evaluated out-of-domain; attempting to perturb an immutable feature is
+      rejected client-side before reaching the engine (the engine itself throws, per
+      findFeasibleFlip's immutable-feature test)"
+    error_state: "no feasible flip found -> show the oracle's own reason string verbatim
+      (e.g. 'no integer value within the observed training range flips the decision')"
+    reset: "perturbation = null, case reverts to its original fixture values"
+  - id: SYN-INT-005
+    name: "View calibration"
+    input: "bin_lo/bin_hi pair from calibration.json (10 bins, both models)"
+    then: "shows that bin's real n/mean_predicted/observed_rate from the full 9045-row test
+      set (never the ~300-row sample, which calibration.json does not draw from)"
+    empty_state: "n=0 bin shows 'no test cases fell in this probability range' rather than a
+      broken chart"
+    reset: "no bin selected; summary reliability curve shown"
+  - id: SYN-INT-006
+    name: "Compare explanations"
+    input: "comparison_case_id from the same ~300-row sample"
+    then: "side-by-side logistic_attribution_by_feature bars for selected_case_id vs
+      comparison_case_id"
+    invalid_input: "comparison_case_id == selected_case_id -> 'select a different case to
+      compare', no diff rendered"
+    reset: "comparison_case_id = null, single-case attribution view shown"
+
+negative_cases_required_by_ANALYTICAL_STANDARDS:
+  - "missing fixture: data/*.json fetch failure shows a retry affordance, never a blank
+    screen or a silently-stale cached render"
+  - "invalid parameter: out-of-range threshold/out-of-bounds perturbation clamped, never
+    passed through to the engine unchecked"
+  - "empty data: a calibration bin or threshold row with n=0 / all-zero confusion counts
+    renders an explicit empty state"
+  - "interrupted computation: not applicable in the current scope -- every SYN-INT-004
+    computation is synchronous (<1ms, pure arithmetic on an in-memory manifest), so there is
+    no async cancellation race to test. If a future change moves this to a Worker, this
+    exemption is revoked and a cancellation test is required before that change ships."
+  - "unavailable GPU / WebGL context loss: see docs/MOTION_SYSTEM.md once the vertical slice
+    defines the renderer; the 2D fallback path must remain the one true source of the
+    required controls, never degraded functionality."

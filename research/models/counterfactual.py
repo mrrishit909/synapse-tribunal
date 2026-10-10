@@ -5,10 +5,16 @@ search, labeled as such. Only actionable features are ever searched.
 """
 from __future__ import annotations
 
+import math
+
 from .reference_math import MANIFEST, logistic_proba
 
 ACTIONABLE_NUMERIC = set(MANIFEST["actionable_numeric"])
 ACTIONABLE_CATEGORICAL = set(MANIFEST["actionable_categorical"])
+# Every numeric feature in this dataset is integer-valued in the raw source (see train.py's
+# INTEGER_FEATURES); a found flip must be snapped to an integer and re-checked, a fractional
+# "47.38 hours/week" is not a value a real row could ever have.
+INTEGER_FEATURES = set(MANIFEST["numeric_scaler"]["features"])
 
 
 def search_numeric(raw: dict, feature: str, threshold: float, tol: float = 1e-3, max_iter: int = 60) -> dict:
@@ -37,6 +43,19 @@ def search_numeric(raw: dict, feature: str, threshold: float, tol: float = 1e-3,
         if abs(b - a) < tol * max(1.0, abs(hi - lo)):
             break
     flip_value = b
+    if feature in INTEGER_FEATURES:
+        # Snap to the nearest integer on the side of `flip_value` that keeps the decision
+        # flipped (round toward b, away from a, re-checking rather than assuming).
+        snapped = math.ceil(flip_value) if b > a else math.floor(flip_value)
+        if pred_at(snapped) == current_pred:
+            # the snap rounded back across the boundary; step one more unit outward
+            snapped = snapped + 1 if b > a else snapped - 1
+        if lo <= snapped <= hi and pred_at(snapped) != current_pred:
+            flip_value = snapped
+        else:
+            return {"feasible": False, "feature": feature, "reason":
+                     "no integer value within the observed training range flips the decision "
+                     "(a fractional flip exists but this feature is integer-valued)"}
     return {
         "feasible": True, "feature": feature,
         "from_value": current, "to_value": round(flip_value, 6),

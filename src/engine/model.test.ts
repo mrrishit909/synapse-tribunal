@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { isActionable, logisticAttribution, logisticProba } from './model'
+import { groupAttributionByFeature, isActionable, logisticAttribution, logisticProba } from './model'
 import type { ModelManifest, TestFixture } from './types'
 
 const DATA_DIR = resolve(import.meta.dirname, '../../public/data/precomputed')
@@ -49,6 +49,29 @@ describe('logisticAttribution', () => {
       const logit = Math.log(proba / (1 - proba))
       expect(Math.abs(sum + manifest.logistic.attribution_base_logit - logit)).toBeLessThan(1e-3)
     }
+  })
+})
+
+describe('groupAttributionByFeature', () => {
+  it('matches the Python-grouped values and preserves the total sum', () => {
+    for (const row of fixture.rows.slice(0, 30)) {
+      const attrib = logisticAttribution(manifest, row.raw)
+      const grouped = groupAttributionByFeature(manifest, attrib)
+      for (const [feature, value] of Object.entries(row.logistic_attribution_by_feature)) {
+        expect(Math.abs(grouped[feature] - value)).toBeLessThan(1e-3)
+      }
+      const ungroupedSum = attrib.reduce((a, b) => a + b, 0)
+      const groupedSum = Object.values(grouped).reduce((a, b) => a + b, 0)
+      expect(Math.abs(ungroupedSum - groupedSum)).toBeLessThan(1e-3)
+    }
+  })
+})
+
+describe('leakage_check is disclosed', () => {
+  it('reports a count within [0, n_test]', () => {
+    const check = manifest.leakage_check
+    expect(check.exact_duplicate_test_rows_present_in_train).toBeGreaterThanOrEqual(0)
+    expect(check.exact_duplicate_test_rows_present_in_train).toBeLessThanOrEqual(check.n_test)
   })
 })
 

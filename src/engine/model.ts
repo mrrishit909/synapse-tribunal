@@ -39,6 +39,22 @@ export function logisticAttribution(manifest: ModelManifest, raw: RawCase): numb
   return coef.map((c, i) => c * (x[i] - baseline[i]))
 }
 
+/** Sums one-hot-column attributions back to their parent raw feature. Additivity of
+ * linear SHAP makes this exact (a display aggregation, not a second approximation). */
+export function groupAttributionByFeature(
+  manifest: ModelManifest,
+  attribution: number[],
+): Record<string, number> {
+  const out: Record<string, number> = {}
+  for (const f of manifest.feature_order_raw) out[f] = 0
+  for (let i = 0; i < manifest.transformed_feature_order.length; i++) {
+    const name = manifest.transformed_feature_order[i]
+    const rawFeature = name.includes('=') ? name.split('=')[0] : name
+    out[rawFeature] = Math.round((out[rawFeature] + attribution[i]) * 1e6) / 1e6
+  }
+  return out
+}
+
 export function isActionable(manifest: ModelManifest, feature: string): boolean {
   return (
     manifest.actionable_numeric.includes(feature) ||

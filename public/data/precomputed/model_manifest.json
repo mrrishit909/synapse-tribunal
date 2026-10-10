@@ -441,7 +441,7 @@
     "attribution_base_logit": -1.941898532101623,
     "attribution_method": "Closed-form linear SHAP: coef_i * (x_i - mean(x_i | train)) in the one-hot/scaled feature space, summing to the model's logit minus its train-mean logit. Exact under the feature-independence assumption; this is an approximation of true Shapley values when features correlate, not a causal explanation of the outcome."
   },
-  "forest": {
+  "boosting": {
     "cv_auroc_folds": [
       0.927365,
       0.923971,
@@ -457,7 +457,7 @@
       "n_test": 9045
     },
     "attribution_available": false,
-    "attribution_note": "No per-case attribution is shown for the forest model; only its predicted probability is compared against the logistic model (SYN-INT-002). Showing a fabricated or borrowed attribution for a different model's decision would misrepresent how that model reached it."
+    "attribution_note": "No per-case attribution is shown for the boosting model; only its predicted probability is compared against the logistic model (SYN-INT-002). Showing a fabricated or borrowed attribution for a different model's decision would misrepresent how that model reached it."
   },
   "numeric_observed_bounds": {
     "education-num": [
@@ -480,5 +480,10 @@
       17.0,
       90.0
     ]
+  },
+  "leakage_check": {
+    "exact_duplicate_test_rows_present_in_train": 1977,
+    "n_test": 9045,
+    "note": "Count of test rows whose raw features (post fnlwgt/education drop) exactly match some train row. Disclosed, not silently deduplicated; a nonzero count here means test-set performance is mildly optimistic for those specific rows, not that the whole evaluation is invalid."
   }
 }

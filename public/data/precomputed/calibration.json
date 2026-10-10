@@ -71,7 +71,7 @@
       "observed_rate": 0.9716
     }
   ],
-  "forest": [
+  "boosting": [
     {
       "bin_lo": 0.0,
       "bin_hi": 0.1,

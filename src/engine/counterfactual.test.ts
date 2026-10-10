@@ -34,6 +34,17 @@ describe('findFeasibleFlip: numeric actionable feature', () => {
   })
 })
 
+describe('findFeasibleFlip: integer snapping', () => {
+  it('never returns a fractional to_value for an integer-valued feature', () => {
+    for (const feature of ['hours-per-week', 'education-num', 'capital-gain', 'capital-loss']) {
+      const result = findFeasibleFlip(manifest, sampleRaw, feature, 0.5)
+      if (result.feasible && typeof result.to_value === 'number') {
+        expect(Number.isInteger(result.to_value)).toBe(true)
+      }
+    }
+  })
+})
+
 describe('findFeasibleFlip: categorical actionable feature', () => {
   it('returns feasible=false with a reason, or a real flipping category', () => {
     const result = findFeasibleFlip(manifest, sampleRaw, 'workclass', 0.5)
