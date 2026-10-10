@@ -88,7 +88,14 @@ gates:
       not yet independently reviewed -- pending the full-integration review in task #11"]
   - id: SYN-MOTION-001
     description: "Intro and all six chapter captures, reverse-scroll and reduced-motion tests."
-    status: unstarted
+    status: implemented
+    evidence: ["e2e/tribunal.spec.ts (intro play/skip/keyboard, reduced-motion bypass,
+      all-6-chapters-reveal-forward, reverse-scroll)", "24 per-chapter screenshots across
+      3 breakpoints in verification/SCREENSHOTS/", "src/motion/useChapterReveal.ts,
+      src/scenes/IntroSequence.tsx"]
+    note: "Not yet independently reviewed. Real (non-headless-SwiftShader) frame-pacing
+      measurement not yet done -- this build has no WebGL/3D so that risk is lower than
+      a 3D build's, but still unmeasured."
   - id: SYN-RELEASE-001
     description: "Production build, Pages base path, deployed smoke test, honest limitations."
     status: unstarted
