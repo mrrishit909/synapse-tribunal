@@ -67,6 +67,50 @@ test("switching the selected case (SYN-INT-001) recomputes and clears perturbati
   await expect(page.locator(".dossier-case-number")).not.toHaveText(caseNumberBefore ?? "");
 });
 
+test("switching model (SYN-INT-002) shows the real fixture probability and disables perturbation", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByTestId("tribunal-scene")).toBeVisible();
+
+  await page.getByRole("button", { name: /gradient-boosted trees/i }).click();
+  await expect(page.getByText(/no live evaluator exists for this model/i)).toBeVisible();
+  await expect(page.getByText(/perturbation is disabled while the boosting model is active/i)).toBeVisible();
+
+  await page.getByRole("button", { name: /logistic regression/i }).click();
+  await expect(page.getByLabel(/hours worked/i)).toBeVisible();
+});
+
+test("changing the threshold (SYN-INT-003) updates the confusion-matrix panel", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByTestId("tribunal-scene")).toBeVisible();
+
+  const confusionBefore = await page.locator(".confusion-grid").textContent();
+  const slider = page.getByLabel(/classify as "exceeds \$50k" when probability/i);
+  await slider.fill("0.9");
+  await expect(page.locator(".confusion-grid")).not.toHaveText(confusionBefore ?? "");
+});
+
+test("selecting a calibration bin (SYN-INT-005) shows a real cohort", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByTestId("tribunal-scene")).toBeVisible();
+
+  const bins = page.locator(".calibration-bin");
+  await expect(bins).toHaveCount(10);
+  await bins.first().click();
+  await expect(page.locator(".calibration-detail")).toBeVisible();
+});
+
+test("comparing two cases (SYN-INT-006) shows two real attribution panels", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByTestId("tribunal-scene")).toBeVisible();
+
+  const select = page.getByLabel(/compare case .* against/i);
+  const options = await select.locator("option").all();
+  const secondValue = await options[1].getAttribute("value");
+  await select.selectOption(secondValue!);
+
+  await expect(page.locator(".comparison-grid .attribution-bars")).toHaveCount(2);
+});
+
 test("keyboard operability: perturb and search without a mouse", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByTestId("tribunal-scene")).toBeVisible();

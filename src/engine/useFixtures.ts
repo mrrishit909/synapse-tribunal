@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import type { ModelManifest, TestFixture } from './types'
+import type { CalibrationFixture, ModelManifest, TestFixture, ThresholdSweep } from './types'
 
 export interface FixturesLoading {
   status: 'loading'
@@ -12,10 +12,14 @@ export interface FixturesReady {
   status: 'ready'
   manifest: ModelManifest
   fixture: TestFixture
+  thresholdSweep: ThresholdSweep
+  calibration: CalibrationFixture
 }
 export type FixturesState = FixturesLoading | FixturesError | FixturesReady
 
-/** Fetches the two small browser fixtures via BASE_URL, exactly the pattern CTY's
+const FILES = ['model_manifest.json', 'test_fixture.json', 'threshold_sweep.json', 'calibration.json'] as const
+
+/** Fetches the four small browser fixtures via BASE_URL, exactly the pattern CTY's
  * loadPanel.ts used, so this survives a GitHub Pages project-page base path untouched. */
 export function useFixtures(): FixturesState & { retry: () => void } {
   const [state, setState] = useState<FixturesState>({ status: 'loading' })
@@ -30,18 +34,16 @@ export function useFixtures(): FixturesState & { retry: () => void } {
     // oxlint-disable-next-line react/set-state-in-effect
     setState({ status: 'loading' })
     const base = import.meta.env.BASE_URL
-    Promise.all([
-      fetch(`${base}data/precomputed/model_manifest.json`).then((r) => {
-        if (!r.ok) throw new Error(`model_manifest.json: HTTP ${r.status}`)
-        return r.json()
-      }),
-      fetch(`${base}data/precomputed/test_fixture.json`).then((r) => {
-        if (!r.ok) throw new Error(`test_fixture.json: HTTP ${r.status}`)
-        return r.json()
-      }),
-    ])
-      .then(([manifest, fixture]) => {
-        if (!cancelled) setState({ status: 'ready', manifest, fixture })
+    Promise.all(
+      FILES.map((name) =>
+        fetch(`${base}data/precomputed/${name}`).then((r) => {
+          if (!r.ok) throw new Error(`${name}: HTTP ${r.status}`)
+          return r.json()
+        }),
+      ),
+    )
+      .then(([manifest, fixture, thresholdSweep, calibration]) => {
+        if (!cancelled) setState({ status: 'ready', manifest, fixture, thresholdSweep, calibration })
       })
       .catch((err: Error) => {
         if (!cancelled) setState({ status: 'error', message: err.message })

@@ -5,15 +5,20 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import Tribunal from './Tribunal'
 
 const DATA_DIR = resolve(import.meta.dirname, '../../public/data/precomputed')
-const manifestJson = readFileSync(resolve(DATA_DIR, 'model_manifest.json'), 'utf-8')
-const fixtureJson = readFileSync(resolve(DATA_DIR, 'test_fixture.json'), 'utf-8')
+const FILES: Record<string, string> = {
+  model_manifest: readFileSync(resolve(DATA_DIR, 'model_manifest.json'), 'utf-8'),
+  test_fixture: readFileSync(resolve(DATA_DIR, 'test_fixture.json'), 'utf-8'),
+  threshold_sweep: readFileSync(resolve(DATA_DIR, 'threshold_sweep.json'), 'utf-8'),
+  calibration: readFileSync(resolve(DATA_DIR, 'calibration.json'), 'utf-8'),
+}
 
 beforeEach(() => {
   vi.stubGlobal(
     'fetch',
     vi.fn((url: string) => {
-      const body = url.includes('model_manifest') ? manifestJson : fixtureJson
-      return Promise.resolve(new Response(body, { status: 200 }))
+      const key = Object.keys(FILES).find((k) => url.includes(k))
+      if (!key) throw new Error(`unmocked fetch: ${url}`)
+      return Promise.resolve(new Response(FILES[key], { status: 200 }))
     }),
   )
 })
@@ -99,5 +104,66 @@ describe('Tribunal scene (SYN-INT-004 vertical slice)', () => {
     // a stale "recomputed live" state into a fresh case selection.
     expect(screen.queryByText(/recomputed live after your edit/i)).not.toBeInTheDocument()
     expect(screen.getByText(/Probability of exceeding/i).textContent).not.toBe(probabilityBefore)
+  })
+
+  it('switching to the boosting model shows its real fixture probability and disables perturbation (SYN-INT-002)', async () => {
+    render(<Tribunal />)
+    await waitFor(() => expect(screen.getByTestId('tribunal-scene')).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('button', { name: /gradient-boosted trees/i }))
+
+    await waitFor(() => {
+      expect(screen.getByText(/no live evaluator exists for this model/i)).toBeInTheDocument()
+    })
+    expect(screen.getByText(/perturbation is disabled while the boosting model is active/i)).toBeInTheDocument()
+    expect(screen.getByText(/no per-case attribution is shown for the boosting model/i)).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: /logistic regression/i }))
+    await waitFor(() => {
+      expect(screen.queryByText(/no live evaluator exists for this model/i)).not.toBeInTheDocument()
+    })
+  })
+
+  it('changing the threshold recomputes the verdict and confusion counts (SYN-INT-003)', async () => {
+    render(<Tribunal />)
+    await waitFor(() => expect(screen.getByTestId('tribunal-scene')).toBeInTheDocument())
+
+    const slider = screen.getByLabelText(/classify as "exceeds \$50k" when probability/i)
+    const confusionBefore = document.querySelector('.confusion-grid')!.textContent
+
+    fireEvent.change(slider, { target: { value: '0.9' } })
+
+    await waitFor(() => {
+      expect(document.querySelector('.confusion-grid')!.textContent).not.toBe(confusionBefore)
+    })
+  })
+
+  it('selecting a calibration bin shows a real cohort or an honest empty state (SYN-INT-005)', async () => {
+    render(<Tribunal />)
+    await waitFor(() => expect(screen.getByTestId('tribunal-scene')).toBeInTheDocument())
+
+    const bins = document.querySelectorAll('.calibration-bin')
+    expect(bins.length).toBe(10)
+    fireEvent.click(bins[0])
+
+    await waitFor(() => {
+      expect(document.querySelector('.calibration-detail')).toBeTruthy()
+    })
+    const text = document.querySelector('.calibration-detail')!.textContent!
+    expect(text).toMatch(/no test cases fell|mean predicted probability/i)
+  })
+
+  it('comparing two cases shows both cases real attribution bars side by side (SYN-INT-006)', async () => {
+    render(<Tribunal />)
+    await waitFor(() => expect(screen.getByTestId('tribunal-scene')).toBeInTheDocument())
+
+    const select = screen.getByLabelText(/compare case .* against/i) as HTMLSelectElement
+    const option = Array.from(select.options).find((o) => o.value !== '')!
+    fireEvent.change(select, { target: { value: option.value } })
+
+    await waitFor(() => {
+      expect(document.querySelector('.comparison-grid')).toBeTruthy()
+    })
+    expect(document.querySelectorAll('.comparison-grid .attribution-bars').length).toBe(2)
   })
 })
