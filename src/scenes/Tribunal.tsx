@@ -8,6 +8,7 @@ import { useChapterReveal } from '../motion/useChapterReveal'
 import { useReducedMotion } from '../motion/useReducedMotion'
 import ChapterNav from './ChapterNav'
 import IntroSequence from './IntroSequence'
+import WebGLErrorBoundary from '../webgl/WebGLErrorBoundary'
 import { useIsMobileViewport } from '../webgl/useIsMobileViewport'
 import { useScrollProgress } from '../webgl/useScrollProgress'
 import '../webgl/WebGLStage.css'
@@ -85,7 +86,7 @@ export default function Tribunal() {
   const reducedMotion = useReducedMotion()
   const scrollProgress = useScrollProgress()
   const isMobileViewport = useIsMobileViewport()
-  const sceneRef = useRef<HTMLDivElement>(null)
+  const sceneRef = useRef<HTMLElement>(null)
   const [introDone, setIntroDone] = useState(false)
 
   const [selectedCaseId, setSelectedCaseId] = useState<number | null>(null)
@@ -221,18 +222,22 @@ export default function Tribunal() {
       {isMobileViewport ? (
         <div className="webgl-fallback" data-testid="webgl-fallback" aria-hidden="true" />
       ) : (
-        <Suspense fallback={null}>
-          <WebGLStage
-            proba={liveResult.proba}
-            attribution={liveResult.attribution ?? {}}
-            scrollProgress={scrollProgress}
-            reducedMotion={reducedMotion}
-          />
-        </Suspense>
+        <WebGLErrorBoundary
+          fallback={<div className="webgl-fallback" data-testid="webgl-fallback" aria-hidden="true" />}
+        >
+          <Suspense fallback={null}>
+            <WebGLStage
+              proba={liveResult.proba}
+              attribution={liveResult.attribution ?? {}}
+              scrollProgress={scrollProgress}
+              reducedMotion={reducedMotion}
+            />
+          </Suspense>
+        </WebGLErrorBoundary>
       )}
       {!introDone && <IntroSequence onComplete={() => setIntroDone(true)} />}
       <ChapterNav />
-      <div className="tribunal-scene" ref={sceneRef} data-testid="tribunal-scene">
+      <main className="tribunal-scene" ref={sceneRef} data-testid="tribunal-scene">
         <header className="dossier-header">
           <p className="dossier-case-number">CASE No. {String(caseRow.id).padStart(5, '0')}</p>
           <h1>Synapse Tribunal</h1>
@@ -604,7 +609,7 @@ export default function Tribunal() {
             like this one before. Trust it accordingly.
           </p>
         </section>
-      </div>
+      </main>
     </>
   )
 }

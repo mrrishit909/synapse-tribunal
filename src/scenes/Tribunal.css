@@ -69,9 +69,15 @@
 
 .dossier-panel {
   border: 1px solid var(--ink-line);
-  /* Opaque enough to stay legible over the WebGL scene behind it (was 0.03, nearly
-     invisible, fine against a solid page background but not against an animated one). */
-  background: rgba(16, 17, 22, 0.88);
+  /* A real WCAG AA contrast failure was caught by axe-core at 0.88: the evidence core's
+     bright red glow, rendered behind the panel, blends through semi-transparent
+     background and can push text contrast below 4.5:1 depending on what the WebGL scene
+     happens to be showing at that moment -- the panel's "see the world behind it" effect
+     cannot be allowed to make contrast a function of live, unpredictable scene content.
+     0.97 keeps a faint hint of the scene in the unoccupied corners of each panel while
+     guaranteeing text contrast stays effectively identical to a solid background; the
+     gaps BETWEEN panels (headers, margins) remain the main place the scene is visible. */
+  background: rgba(16, 17, 22, 0.97);
   backdrop-filter: blur(4px);
   padding: 20px;
   margin-bottom: 20px;

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { supportsWebGL } from './supportsWebGL'
 import Scene, { type SceneProps } from './Scene'
@@ -23,6 +23,22 @@ export default function WebGLStage({ proba, attribution, scrollProgress, reduced
   const [webglAvailable] = useState(supportsWebGL)
   const [contextLost, setContextLost] = useState(false)
   const lostAtRef = useRef<number | null>(null)
+
+  // Real bug found on WebKit: after context loss, Three.js's own internal renderer can
+  // throw an uncaught exception (calling a GL method on the now-invalid context) from
+  // inside its own requestAnimationFrame-driven render call -- NOT during React's render
+  // phase, so WebGLErrorBoundary (which only catches render-phase errors) never sees it;
+  // the exception surfaces as a `window` 'error' event instead, and with no handler for
+  // that, it was silently crashing more than this component could see. This listener is
+  // the actual fix for that gap; the error boundary (in Tribunal.tsx) remains as a second
+  // layer for genuine React-render-phase failures. Scoped to "while this stage is
+  // mounted" since by then any uncaught error reaching window level is overwhelmingly
+  // likely to be from the WebGL subsystem, not unrelated app code.
+  useEffect(() => {
+    const onWindowError = () => setContextLost(true)
+    window.addEventListener('error', onWindowError)
+    return () => window.removeEventListener('error', onWindowError)
+  }, [])
 
   if (!webglAvailable || contextLost) {
     return <div className="webgl-fallback" data-testid="webgl-fallback" aria-hidden="true" />
