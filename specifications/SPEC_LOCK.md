@@ -69,9 +69,12 @@ system configuration, not reversible local dev work. This session's own backgrou
 model is the persistence mechanism; `execution/RESUME.md` is the cold-resume contract if this
 session ends mid-build.
 
-## 5. Dataset (decided in task #3, recorded here once locked)
+## 5. Dataset
 
-TBD, see `specifications/DATA_CONTRACT.yaml` once written. Must have: licensed/auditable source,
-thousands of test rows (calibration bins need volume), a mix of actionable features (can appear in
-a counterfactual) and immutable features (age, protected attributes, excluded from perturbation
-and counterfactual search by construction, not just by convention).
+**Locked: Adult Income (OpenML id 1590, v2)**, 48,842 rows, public-domain US Census source,
+license/provenance recorded in `research/data/raw/MANIFEST.json` and
+`specifications/DATA_CONTRACT.yaml`. Binary task (income <=/>50K). Actionable features: workclass,
+education-num, occupation, capital-gain, capital-loss, hours-per-week. Immutable (never perturbed,
+never a counterfactual lever): age, marital-status, relationship, race, sex, native-country.
+`fnlwgt` dropped (sampling weight, not a feature of the individual); `education` dropped as
+redundant with `education-num`. Full reasoning per-field in `DATA_CONTRACT.yaml`.

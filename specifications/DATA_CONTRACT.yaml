@@ -1,0 +1,96 @@
+dataset: "Adult Income (OpenML id 1590, version 2)"
+provider: "OpenML, mirroring the UCI Machine Learning Repository / 1994 US Census Bureau extract"
+canonical_url: "https://www.openml.org/d/1590"
+access_date_utc: "2026-10-10T21:23:22Z"
+license: "Public domain (US Census Bureau source data). UCI/OpenML redistribution terms: free
+  for research and educational use, no warranty, cite source. Verified at the OpenML dataset
+  page before use, not assumed from the dataset's name."
+raw_sha256: "8f970e20c9991979ec0a9ccb65ce97543d678709a2c6f8ef23f7fb32f40adddc"
+raw_rows: 48842
+task: "Binary classification: predict whether reported income exceeds $50K/year (column 'class')."
+
+why_this_dataset:
+  - "License is auditable at the source, not assumed (research/ingest/fetch_adult.py writes a
+    manifest with provider/url/version/sha256 on every refetch)."
+  - "48,842 rows total gives a held-out test set in the thousands, large enough that
+    calibration-bin reliability curves (SYN-INT-005) are not dominated by sampling noise."
+  - "Natural split between actionable and immutable features, which SYN-INT-004's perturbation
+    and the folded-in counterfactual search both require by construction, not by convention."
+
+fields:
+  - name: age
+    type: numeric
+    role: immutable
+    reason: "Not an actionable lever for the person described by a row; excluded from
+      perturbation and counterfactual search by construction."
+  - name: workclass
+    type: categorical
+    role: actionable
+  - name: fnlwgt
+    type: numeric
+    role: dropped
+    reason: "Census sampling weight, not a predictive feature of the individual; standard
+      practice on this dataset is to drop it."
+  - name: education
+    type: categorical
+    role: dropped
+    reason: "Redundant with education-num (same information, ordinal-encoded); keeping both
+      would double-count one real feature."
+  - name: education-num
+    type: numeric
+    role: actionable
+    reason: "Treated as an attainable credential level for the counterfactual search (e.g.
+      'complete one more year of schooling'), explicitly labeled as a modeling simplification,
+      not a claim that schooling is quick or guaranteed."
+  - name: marital-status
+    type: categorical
+    role: immutable
+    reason: "Protected-characteristic-adjacent; excluded from perturbation/counterfactual search."
+  - name: occupation
+    type: categorical
+    role: actionable
+  - name: relationship
+    type: categorical
+    role: immutable
+    reason: "Derived from household structure, not an individually actionable lever."
+  - name: race
+    type: categorical
+    role: immutable
+    reason: "Protected characteristic; never perturbed, never used as a counterfactual lever."
+  - name: sex
+    type: categorical
+    role: immutable
+    reason: "Protected characteristic; never perturbed, never used as a counterfactual lever."
+  - name: capital-gain
+    type: numeric
+    role: actionable
+  - name: capital-loss
+    type: numeric
+    role: actionable
+  - name: hours-per-week
+    type: numeric
+    role: actionable
+  - name: native-country
+    type: categorical
+    role: immutable
+    reason: "Protected-characteristic-adjacent; excluded from perturbation/counterfactual search."
+  - name: class
+    type: categorical
+    role: label
+    values: ["<=50K", ">50K"]
+
+split_methodology: "Stratified train/test split on the label, fit inside the Python reference
+  pipeline only (preprocessing/encoders fit on train fold only, never on the full dataset) to
+  avoid leakage. Exact ratio and seed recorded in research/models/MANIFEST.json once trained."
+
+labeling_rule: "Every number shown in the app is one of: historical measurement (a real row's
+  real label), fitted estimate (a model's probability/attribution output), or counterfactual
+  inference (a found feasible flip, or an honest 'no feasible flip within bounds'). Never
+  simulated/interpolated values presented as any of the above."
+
+known_limitations:
+  - "1994 US Census data: income thresholds and occupational categories reflect that period's
+    economy and dollar values, not current ones. The app labels this as historical, not current."
+  - "fnlwgt's removal and the actionable/immutable split are documented modeling choices, not
+    properties of the raw data itself; a different, defensible split exists and is not claimed
+    to be the only valid one."

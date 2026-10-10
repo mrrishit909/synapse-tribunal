@@ -1,0 +1,27 @@
+{
+  "provider": "OpenML (mirrors UCI Machine Learning Repository / 1994 US Census Bureau extract)",
+  "canonical_url": "https://www.openml.org/d/1590",
+  "openml_id": 1590,
+  "version": 2,
+  "access_date_utc": "2026-10-10T21:23:22.582753+00:00",
+  "license": "Public domain (US Census Bureau data); UCI/OpenML redistribution terms: free for research/educational use, no warranty, cite source.",
+  "rows": 48842,
+  "columns": [
+    "age",
+    "workclass",
+    "fnlwgt",
+    "education",
+    "education-num",
+    "marital-status",
+    "occupation",
+    "relationship",
+    "race",
+    "sex",
+    "capital-gain",
+    "capital-loss",
+    "hours-per-week",
+    "native-country",
+    "class"
+  ],
+  "sha256_adult_raw_csv": "8f970e20c9991979ec0a9ccb65ce97543d678709a2c6f8ef23f7fb32f40adddc"
+}
