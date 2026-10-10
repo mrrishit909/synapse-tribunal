@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { Suspense, lazy, useRef, useState } from 'react'
 import { findFeasibleFlip } from '../engine/counterfactual'
 import { featureLabel, formatProbability, formatValue } from '../engine/format'
 import { groupAttributionByFeature, logisticAttribution, logisticProba } from '../engine/model'
@@ -8,6 +8,14 @@ import { useChapterReveal } from '../motion/useChapterReveal'
 import { useReducedMotion } from '../motion/useReducedMotion'
 import ChapterNav from './ChapterNav'
 import IntroSequence from './IntroSequence'
+import { useIsMobileViewport } from '../webgl/useIsMobileViewport'
+import { useScrollProgress } from '../webgl/useScrollProgress'
+import '../webgl/WebGLStage.css'
+
+// Lazy-loaded so Three.js/@react-three/fiber (the bulk of the WebGL stack) are a
+// separate chunk, fetched after the 2D chapter shell's own initial render commits, per
+// docs/PERFORMANCE_BUDGETS.md's "initial JS payload must not block first paint" budget.
+const WebGLStage = lazy(() => import('../webgl/WebGLStage'))
 import './Tribunal.css'
 
 function clampToBounds(manifest: ModelManifest, feature: string, value: number): number {
@@ -75,6 +83,8 @@ function AttributionBars({ attribution }: { attribution: Record<string, number> 
 export default function Tribunal() {
   const fixtures = useFixtures()
   const reducedMotion = useReducedMotion()
+  const scrollProgress = useScrollProgress()
+  const isMobileViewport = useIsMobileViewport()
   const sceneRef = useRef<HTMLDivElement>(null)
   const [introDone, setIntroDone] = useState(false)
 
@@ -208,6 +218,18 @@ export default function Tribunal() {
 
   return (
     <>
+      {isMobileViewport ? (
+        <div className="webgl-fallback" data-testid="webgl-fallback" aria-hidden="true" />
+      ) : (
+        <Suspense fallback={null}>
+          <WebGLStage
+            proba={liveResult.proba}
+            attribution={liveResult.attribution ?? {}}
+            scrollProgress={scrollProgress}
+            reducedMotion={reducedMotion}
+          />
+        </Suspense>
+      )}
       {!introDone && <IntroSequence onComplete={() => setIntroDone(true)} />}
       <ChapterNav />
       <div className="tribunal-scene" ref={sceneRef} data-testid="tribunal-scene">

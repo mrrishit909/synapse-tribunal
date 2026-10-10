@@ -49,6 +49,13 @@
     justify-content: center;
     border-left: none;
     padding-left: 0;
-    gap: 6px 12px;
+    gap: 8px;
+  }
+  /* Lighthouse's target-size audit flagged these as too small/close on mobile
+     (chapter-3 and chapter-6 links specifically); padding brings the tap target to the
+     WCAG-recommended ~24px minimum without changing the visible text size. */
+  .chapter-nav a {
+    display: inline-block;
+    padding: 8px 6px;
   }
 }

@@ -1,0 +1,27 @@
+{
+  "measured_at": "2026-10-10T22:56:49.155Z",
+  "mode": "headed, real GPU (not headless/SwiftShader)",
+  "viewport": "1440x900",
+  "idle_baseline": {
+    "mean_ms": 8.74,
+    "p95_ms": 9.2,
+    "fps": 114.4,
+    "dropped_frames": 1,
+    "n": 115
+  },
+  "scroll_forward": {
+    "mean_ms": 8.31,
+    "p95_ms": 9.2,
+    "fps": 120.4,
+    "dropped_frames": 0,
+    "n": 181
+  },
+  "scroll_reverse": {
+    "mean_ms": 8.32,
+    "p95_ms": 9.2,
+    "fps": 120.2,
+    "dropped_frames": 0,
+    "n": 181
+  },
+  "budget": "docs/PERFORMANCE_BUDGETS.md: ~60fps during active scroll, 0 dropped frames vs idle baseline"
+}

@@ -1,0 +1,19 @@
+/* Fixed background layer, behind the 2D chapter content (which has its own background
+   so this only shows through where the content intentionally doesn't fully cover,
+   consistent with the Atlas's "controls stay as readable 2D overlays" guidance -- the
+   2D layer is primary and legible regardless of what the WebGL layer is doing). */
+.webgl-stage,
+.webgl-fallback {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+.webgl-stage canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.webgl-fallback {
+  background: radial-gradient(circle at 50% 40%, #1a1115 0%, #101116 70%);
+}

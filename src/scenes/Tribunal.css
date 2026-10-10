@@ -12,7 +12,13 @@
   --font-body: Georgia, 'Times New Roman', serif;
   --font-ui: system-ui, -apple-system, 'Segoe UI', sans-serif;
 
-  background: var(--ink);
+  /* Transparent: the WebGL stage (src/webgl/) renders as a fixed layer behind this
+     content (z-index 0 vs this scene's implicit stacking above it in DOM order), so the
+     persistent evidence-chamber scene shows through in the gaps between panels instead
+     of being fully hidden behind an opaque page background. */
+  background: transparent;
+  position: relative;
+  z-index: 1;
   color: var(--paper);
   font-family: var(--font-body);
   max-width: 920px;
@@ -63,7 +69,10 @@
 
 .dossier-panel {
   border: 1px solid var(--ink-line);
-  background: rgba(240, 238, 233, 0.03);
+  /* Opaque enough to stay legible over the WebGL scene behind it (was 0.03, nearly
+     invisible, fine against a solid page background but not against an animated one). */
+  background: rgba(16, 17, 22, 0.88);
+  backdrop-filter: blur(4px);
   padding: 20px;
   margin-bottom: 20px;
 }

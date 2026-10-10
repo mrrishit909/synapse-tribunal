@@ -140,9 +140,11 @@ techniques (camera continuity, material/lighting sophistication, motion grammar,
 visual world) are read and applied through that 2D staging and the forensic identity's spatial
 metaphor, not through a literal WebGL scene graph.
 
-**This is flagged to the user as an open material decision**, not resolved unilaterally: build a
-real persistent WebGL renderer to satisfy Phase 13 literally, or explicitly accept the 2D build as
-meeting the spirit of Phase 9's own "2D interface" allowance. Per the Atlas's own acceptance
-language (EXECUTION_PROTOCOL.md's five release gates, Phase 15's acceptance rows), an unresolved
-row here is a real reason a strict reading could call the final verdict NOT ACCEPTED rather than
-ACCEPTED, and that is not a determination this build should make for the user by default.
+**Resolved by the user directly (AskUserQuestion, this session): build a real persistent WebGL
+renderer.** Not a silent default; the user was shown the conflict and chose explicitly. See
+`docs/PERFORMANCE_BUDGETS.md` for the kill criteria locked before implementation began, and
+`src/webgl/` for the renderer itself. The 2D chapter content and all 6 controls remain the primary
+interactive layer (Atlas: "controls stay as readable 2D overlays... Complex controls and tables may
+require a stable 2D interface") -- the WebGL stage is a persistent visual environment alongside
+them, analytical-state-driven, not decorative, with a 2D/no-canvas fallback for WebGL-unavailable,
+context-loss, and reduced-motion.
