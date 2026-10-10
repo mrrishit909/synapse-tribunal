@@ -31,12 +31,15 @@ requirements:
     priority: P0
     behavior: "Perturb valid feature (+ feasible-flip counterfactual search)"
     owner: "data/ai + frontend"
-    status: implemented
-    note: "Live TS evaluator (src/engine/model.ts, counterfactual.ts) is built and parity-
-      tested against sklearn across the full test set; no UI component built yet."
+    status: tested
+    note: "Full vertical slice built (src/scenes/Tribunal.tsx): case browser, live
+      perturbation + recompute, grouped attribution, feasible-flip search, contradictory-
+      case evidence, reset. Pending independent review before status -> independently_verified."
     verification: ["unit:vitest:src/engine/model.test.ts", "unit:vitest:src/engine/counterfactual.test.ts",
-      "unit:pytest:tests/unit/test_reference.py"]
-    evidence_paths: ["src/engine/", "tests/unit/test_reference.py"]
+      "unit:vitest:src/scenes/Tribunal.test.tsx", "unit:pytest:tests/unit/test_reference.py",
+      "e2e:playwright:e2e/tribunal.spec.ts"]
+    evidence_paths: ["src/engine/", "src/scenes/Tribunal.tsx", "tests/unit/test_reference.py",
+      "e2e/tribunal.spec.ts", "verification/SCREENSHOTS/tribunal-{desktop,tablet,mobile}.png"]
   - id: SYN-INT-005
     priority: P0
     behavior: "View calibration"
