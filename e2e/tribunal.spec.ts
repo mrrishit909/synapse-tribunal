@@ -111,11 +111,15 @@ test("all 6 chapters reveal on forward scroll and the chapter nav tracks them", 
     await expect(page.locator(`.chapter-nav a[href="#chapter-${i}"][aria-current="true"]`)).toBeVisible();
     // Per-chapter VIEWPORT screenshots at the actual scroll position, not fullPage:
     // this project's own CLAUDE.md flags fullPage captures as able to conceal scroll
-    // defects, and a real one turned up here -- fullPage: true baked in a visible
-    // fragment of the already-unmounted intro overlay (confirmed via a standalone
-    // script that the live DOM has zero .intro-sequence nodes at this point; it's a
-    // Chromium full-page-compositing artifact from a since-removed position:fixed
-    // layer, not an application bug). Per-chapter shots avoid it entirely.
+    // defects, and a real one turned up here. An earlier version of this test (before
+    // gotoAndSkipIntro's isVisible() race was fixed, see that helper's own comment) took
+    // a fullPage screenshot whose chapter 2 showed the intro's first beat with Skip
+    // still on screen -- the intro had silently never been dismissed and was still
+    // mid-timeline. That was first misdiagnosed as a Chromium full-page-compositing
+    // quirk with an already-unmounted fixed-position layer; re-verified after fixing
+    // the real cause (a fresh fullPage capture now renders cleanly), so it was the
+    // stale-intro bug the whole time, not a rendering quirk. Kept as per-chapter
+    // viewport shots regardless, since CLAUDE.md prefers them anyway.
     await page.screenshot({ path: path.join(SCREENSHOTS_DIR, `tribunal-chapter-${i}.png`) });
   }
 });
@@ -217,11 +221,10 @@ test.describe("responsive viewports", () => {
       await gotoAndSkipIntro(page);
 
       // Scroll through every chapter, confirming each is revealed, and capture a real
-      // VIEWPORT screenshot at that scroll position -- not fullPage: true, which bakes
-      // in a visible artifact of the already-unmounted intro overlay in Chromium (see
-      // the chapter-reveal test above for the confirmed root cause). Per-chapter shots
-      // also directly match this project's own evidence requirement (entry per chapter
-      // at each breakpoint), not a single flattened composite.
+      // VIEWPORT screenshot at that scroll position (see gotoAndSkipIntro's comment for
+      // why fullPage was dropped here: it originally caught a real stale-intro bug, not
+      // a rendering quirk). Per-chapter shots also directly match this project's own
+      // evidence requirement (entry per chapter at each breakpoint), not one composite.
       for (let i = 1; i <= 6; i++) {
         await page.locator(`#chapter-${i}`).scrollIntoViewIfNeeded();
         await expect(async () => {

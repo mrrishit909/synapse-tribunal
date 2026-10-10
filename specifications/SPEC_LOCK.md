@@ -115,19 +115,34 @@ unrelated UI").
 
 ## 7. Renderer
 
-**Locked: no persistent WebGL/3D renderer.** The Everswap-reference directive's Phase 13 item 2
-asks for "a persistent WebGL environment"; this is overridden by the Atlas's own explicit
-guidance, which outranks a creative-inspiration directive under the precedence order in section 1
-above: "Use 3D only where it helps interpretation... Do not force every element into a
-perspective-transformed world" (Phase 9 of the same directive set, in fact) and the Engineering
-Standards' "optional R3F/Three.js for genuine 3D" (not mandatory). CASCADIA and The Counterfactual
-City's own publication records are direct precedent: CTY's Lighthouse Performance 100/100
-(desktop/mobile) was explicitly attributed in that project's own publication report to having no
-3D renderer to budget around. A reviewing advisor flagged this as a possible contract violation
-under a literal reading of the Everswap directive and it was reconsidered, not reflexively
-defended, before being reaffirmed here. Everswap's techniques (camera continuity, material/
-lighting sophistication, motion grammar, a persistent *visual world*) are read and applied through
-GSAP-choreographed 2D/CSS staging and the forensic identity's own spatial metaphor (a continuous
-dossier/evidence-room progression, not a terrain), not through a literal WebGL scene graph. If a
-future material change wants this reopened, that is an explicit decision for the user to make, not
-one to flip silently mid-build.
+**Status: a 2D build exists; the WebGL question is an open, unresolved conflict inside the user's
+own directive, not something this build has authority to resolve by precedence.** Record corrected
+twice now (see history): an earlier version of this section (a) misclassified the Everswap
+directive as a lower-precedence "creative-inspiration" source when it is in fact a user-pasted
+directive, the top tier under section 1's own precedence order, not something the Atlas's general
+guidance can "override," and (b) cited The Counterfactual City's publication report as attributing
+its Lighthouse 100/100 score to having no 3D renderer. That report makes no such claim anywhere;
+this was an unverified assertion (originating from an advisor's own speculative framing in an
+earlier turn of this session) written into a spec document as if it were a cited fact. Both errors
+are corrected here rather than quietly edited away.
+
+The honest state of the conflict: the Everswap directive is internally self-contradictory on this
+point. Its own Phase 9 says "Use 3D only where it helps interpretation... Do not force every
+element into a perspective-transformed world" and allows a 2D interface for complex controls; its
+own Phase 13 item 2 asks for "a persistent WebGL environment." Both are the same user-provided
+document, same precedence tier. Resolving that contradiction by simply picking the Atlas's
+lower-precedence general guidance, as the earlier version of this section did, was not a valid
+precedence resolution, it was a preference dressed up as one.
+
+What exists: a 2D/CSS, GSAP-choreographed build (this session's own judgment call, made under
+resource and risk constraints, not a spec-authorized resolution of the contradiction). Everswap's
+techniques (camera continuity, material/lighting sophistication, motion grammar, a persistent
+visual world) are read and applied through that 2D staging and the forensic identity's spatial
+metaphor, not through a literal WebGL scene graph.
+
+**This is flagged to the user as an open material decision**, not resolved unilaterally: build a
+real persistent WebGL renderer to satisfy Phase 13 literally, or explicitly accept the 2D build as
+meeting the spirit of Phase 9's own "2D interface" allowance. Per the Atlas's own acceptance
+language (EXECUTION_PROTOCOL.md's five release gates, Phase 15's acceptance rows), an unresolved
+row here is a real reason a strict reading could call the final verdict NOT ACCEPTED rather than
+ACCEPTED, and that is not a determination this build should make for the user by default.
