@@ -194,6 +194,15 @@ export default function Tribunal() {
     setFlipResult(null)
   }
 
+  function handleThresholdChange(value: number) {
+    setThreshold(Math.round(value * 100) / 100)
+    // A flip result computed against the old threshold would misrepresent the new one
+    // (e.g. "flips at 73.8%" displayed after the threshold moved to 90%) -- stale derived
+    // state is exactly the bug class SYN-INT-003/004 interacting was meant to guard
+    // against, so clear it rather than let it silently go out of sync.
+    setFlipResult(null)
+  }
+
   function handleFindFlip() {
     if (!effectiveRaw || !effectiveFlipTarget) return
     try {
@@ -393,10 +402,18 @@ export default function Tribunal() {
             max={0.99}
             step={0.01}
             value={threshold}
-            onChange={(e) => setThreshold(Math.round(Number(e.target.value) * 100) / 100)}
+            onChange={(e) => handleThresholdChange(Number(e.target.value))}
           />
           <output>{threshold.toFixed(2)}</output>
         </div>
+        <button
+          type="button"
+          className="reset-button"
+          onClick={() => handleThresholdChange(0.5)}
+          disabled={threshold === 0.5}
+        >
+          Reset threshold to 0.50
+        </button>
         {confusionRow && (
           <div className="confusion-grid">
             <div className="confusion-cell">

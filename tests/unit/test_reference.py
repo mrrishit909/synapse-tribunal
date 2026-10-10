@@ -180,6 +180,59 @@ def test_counterfactual_integer_snap_never_returns_a_fractional_value():
             )
 
 
+def test_auroc_pr_auc_brier_reconcile_independently_from_the_full_test_fixture():
+    """Atlas validation requirement: 'Brier/ROC reconciliation.' Recomputes all three
+    metrics directly from the exported per-row probabilities/labels in
+    full_test_fixture.json (not from sklearn's internal state) and checks they match
+    the manifest's own reported values, for both models."""
+    from sklearn.metrics import average_precision_score, brier_score_loss, roc_auc_score
+
+    labels = [r["label"] for r in FIXTURE["rows"]]
+    for model_key, proba_key in (("logistic", "logistic_proba"), ("boosting", "boosting_proba")):
+        probs = [r[proba_key] for r in FIXTURE["rows"]]
+        recomputed_auroc = roc_auc_score(labels, probs)
+        recomputed_pr_auc = average_precision_score(labels, probs)
+        recomputed_brier = brier_score_loss(labels, probs)
+        manifest_metrics = MANIFEST[model_key]["test_metrics"]
+        assert math.isclose(recomputed_auroc, manifest_metrics["auroc"], abs_tol=1e-3)
+        assert math.isclose(recomputed_pr_auc, manifest_metrics["pr_auc"], abs_tol=1e-3)
+        assert math.isclose(recomputed_brier, manifest_metrics["brier"], abs_tol=1e-3)
+
+
+def test_threshold_sweep_confusion_counts_reconcile_from_the_full_test_fixture():
+    """Recomputes every confusion-matrix row independently from the full test fixture's
+    per-row probabilities, rather than trusting train.py's own confusion_at_threshold."""
+    for model_key, proba_key in (("logistic", "logistic_proba"), ("boosting", "boosting_proba")):
+        rows = FIXTURE["rows"]
+        for exported in SWEEP[model_key][::10]:  # sample every 10th threshold, 100 checks is enough
+            t = exported["threshold"]
+            tp = sum(1 for r in rows if r[proba_key] >= t and r["label"] == 1)
+            fp = sum(1 for r in rows if r[proba_key] >= t and r["label"] == 0)
+            tn = sum(1 for r in rows if r[proba_key] < t and r["label"] == 0)
+            fn = sum(1 for r in rows if r[proba_key] < t and r["label"] == 1)
+            assert (tp, fp, tn, fn) == (exported["tp"], exported["fp"], exported["tn"], exported["fn"]), (
+                f"{model_key} @ threshold={t}: recomputed ({tp},{fp},{tn},{fn}) != "
+                f"exported ({exported['tp']},{exported['fp']},{exported['tn']},{exported['fn']})"
+            )
+
+
+def test_calibration_bins_reconcile_from_the_full_test_fixture():
+    """Recomputes each calibration bin's n/mean_predicted/observed_rate independently
+    from the full test fixture rather than trusting train.py's own bin loop."""
+    for model_key, proba_key in (("logistic", "logistic_proba"), ("boosting", "boosting_proba")):
+        rows = FIXTURE["rows"]
+        for exported in CALIB[model_key]:
+            lo, hi = exported["bin_lo"], exported["bin_hi"]
+            is_last = math.isclose(hi, 1.0)
+            in_bin = [r for r in rows if lo <= r[proba_key] < hi or (is_last and r[proba_key] == hi)]
+            assert len(in_bin) == exported["n"], f"{model_key} bin [{lo},{hi}]: n mismatch"
+            if in_bin:
+                mean_pred = sum(r[proba_key] for r in in_bin) / len(in_bin)
+                observed = sum(r["label"] for r in in_bin) / len(in_bin)
+                assert math.isclose(mean_pred, exported["mean_predicted"], abs_tol=1e-3)
+                assert math.isclose(observed, exported["observed_rate"], abs_tol=1e-3)
+
+
 def test_out_of_domain_numeric_input_does_not_silently_succeed():
     """A value far outside any observed range should still produce a finite probability
     (the model doesn't crash) but must not be presented as a normal in-domain prediction

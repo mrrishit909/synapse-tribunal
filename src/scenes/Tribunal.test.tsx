@@ -67,6 +67,21 @@ describe('Tribunal scene (SYN-INT-004 vertical slice)', () => {
     expect(result!.textContent).toMatch(/would flip the decision|no single-feature flip found/i)
   })
 
+  it('clears a stale flip result when the threshold changes (regression test)', async () => {
+    render(<Tribunal />)
+    await waitFor(() => expect(screen.getByTestId('tribunal-scene')).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('button', { name: /^search$/i }))
+    await waitFor(() => expect(document.querySelector('.flip-result')).toBeTruthy())
+
+    const slider = screen.getByLabelText(/classify as "exceeds \$50k" when probability/i)
+    fireEvent.change(slider, { target: { value: '0.9' } })
+
+    // A flip computed at the old threshold would misrepresent the new one if left on
+    // screen; it must be cleared, not silently stale.
+    await waitFor(() => expect(document.querySelector('.flip-result')).toBeFalsy())
+  })
+
   it('rejects perturbing an immutable feature from the UI (none rendered for them)', async () => {
     render(<Tribunal />)
     await waitFor(() => expect(screen.getByTestId('tribunal-scene')).toBeInTheDocument())
