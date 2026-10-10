@@ -83,3 +83,51 @@ education-num, occupation, capital-gain, capital-loss, hours-per-week. Immutable
 never a counterfactual lever): age, marital-status, relationship, race, sex, native-country.
 `fnlwgt` dropped (sampling weight, not a feature of the individual); `education` dropped as
 redundant with `education-num`. Full reasoning per-field in `DATA_CONTRACT.yaml`.
+
+## 6. Chapter mapping
+
+The dossier (Build Book p.13) and the execution contract (p.92) give two chapter-name lists for
+the same six scenes, worded differently, same problem as the interaction IDs in section 1. Locked
+mapping, read left to right:
+
+| # | Dossier name | Contract name | Chapter owns | Interactions |
+|---|---|---|---|---|
+| 1 | Prediction | context | Case selection, the model's verdict display, intro handoff | SYN-INT-001, 002 |
+| 2 | training context | system | Dataset provenance made visible: contradictory cases, the duplicate-row leakage disclosure, the synthetic/historical labeling rule | (supporting evidence for the flagship, no dedicated control) |
+| 3 | feature attribution | method | The flagship: perturb a feature, live attribution, feasible-flip search | SYN-INT-004 |
+| 4 | thresholding | intervention | Decision threshold, confusion matrix, precision/recall | SYN-INT-003 |
+| 5 | calibration | diagnostics | Reliability bins, real cohort inspection | SYN-INT-005 |
+| 6 | verdict | comparison | Compare two cases' explanations, close on the model's limitations | SYN-INT-006 |
+
+Reasoning: "comparison" (contract) and "verdict" (dossier) reconcile naturally, SYN-INT-006 is
+literally "compare explanations," and weighing two cases side by side is the right place to land
+on whether a verdict should be trusted. "system" (contract) and "training context" (dossier)
+reconcile around the training data itself, chapter 2 has no interactive control of its own (per
+the dossier's requirement that contradictory-case evidence "transforms the interface" alongside
+feature evidence, not as a seventh control) but hosts the leakage/duplicate disclosure and
+contradictory-case material currently folded into chapter 3 of the single-scene build.
+
+Chapter 1's opening storyboard (0-12s, dossier section C) stays as locked: 0-3s sealed dossier,
+3-6s model vote, 6-9s evidence unfolds, 9-12s confidence challenged and inspector opens, handing
+off into chapter 1's own case-selection/verdict content per the Design Principles' handoff rule
+("the hero visual must persist or morph into the functional scene, never disappear into an
+unrelated UI").
+
+## 7. Renderer
+
+**Locked: no persistent WebGL/3D renderer.** The Everswap-reference directive's Phase 13 item 2
+asks for "a persistent WebGL environment"; this is overridden by the Atlas's own explicit
+guidance, which outranks a creative-inspiration directive under the precedence order in section 1
+above: "Use 3D only where it helps interpretation... Do not force every element into a
+perspective-transformed world" (Phase 9 of the same directive set, in fact) and the Engineering
+Standards' "optional R3F/Three.js for genuine 3D" (not mandatory). CASCADIA and The Counterfactual
+City's own publication records are direct precedent: CTY's Lighthouse Performance 100/100
+(desktop/mobile) was explicitly attributed in that project's own publication report to having no
+3D renderer to budget around. A reviewing advisor flagged this as a possible contract violation
+under a literal reading of the Everswap directive and it was reconsidered, not reflexively
+defended, before being reaffirmed here. Everswap's techniques (camera continuity, material/
+lighting sophistication, motion grammar, a persistent *visual world*) are read and applied through
+GSAP-choreographed 2D/CSS staging and the forensic identity's own spatial metaphor (a continuous
+dossier/evidence-room progression, not a terrain), not through a literal WebGL scene graph. If a
+future material change wants this reopened, that is an explicit decision for the user to make, not
+one to flip silently mid-build.
