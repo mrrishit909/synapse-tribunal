@@ -1,11 +1,10 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
-import App from "./App";
+import { render, screen } from '@testing-library/react'
+import { describe, expect, it } from 'vitest'
+import App from './App'
 
-describe("App", () => {
-  it("renders the counter button and increments on click", async () => {
-    render(<App />);
-    const button = screen.getByRole("button", { name: /count is 0/i });
-    expect(button).toBeInTheDocument();
-  });
-});
+describe('App', () => {
+  it('renders the loading state before fixtures resolve', () => {
+    render(<App />)
+    expect(screen.getByRole('status')).toHaveTextContent(/opening the case file/i)
+  })
+})

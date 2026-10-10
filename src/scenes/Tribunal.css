@@ -1,0 +1,298 @@
+/* Design tokens: Atlas-locked identity (specifications/SPEC_LOCK.md section 2).
+   #101116 / #DF514B / #F0EEE9, forensic typography, documentary paper, red precision marks.
+   Web-safe font stacks only (no external font fetch): protects LCP/performance, which the
+   release gate weights heavily, over a marginal typographic upgrade. */
+.tribunal-scene {
+  --ink: #101116;
+  --paper: #f0eee9;
+  --accent: #df514b;
+  --paper-dim: #c9c6bd;
+  --ink-line: #2a2b31;
+  --font-display: 'Courier New', 'IBM Plex Mono', ui-monospace, monospace;
+  --font-body: Georgia, 'Times New Roman', serif;
+  --font-ui: system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--font-body);
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 24px 20px 64px;
+  line-height: 1.5;
+}
+
+.tribunal-status {
+  background: #101116;
+  color: #f0eee9;
+  font-family: Georgia, serif;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 24px;
+}
+.tribunal-status--error button {
+  margin-top: 12px;
+}
+
+.dossier-header {
+  border-bottom: 2px solid var(--accent);
+  padding-bottom: 16px;
+  margin-bottom: 24px;
+}
+.dossier-case-number {
+  font-family: var(--font-display);
+  color: var(--accent);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  margin: 0 0 4px;
+}
+.dossier-header h1 {
+  font-family: var(--font-body);
+  font-size: clamp(1.8rem, 5vw, 2.6rem);
+  margin: 0 0 4px;
+  letter-spacing: 0.01em;
+}
+.dossier-subtitle {
+  color: var(--paper-dim);
+  font-style: italic;
+  margin: 0;
+}
+
+.dossier-panel {
+  border: 1px solid var(--ink-line);
+  background: rgba(240, 238, 233, 0.03);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+.dossier-panel h2 {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 14px;
+}
+
+label {
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  color: var(--paper-dim);
+  display: block;
+  margin-bottom: 6px;
+}
+select,
+input[type='range'],
+button {
+  font-family: var(--font-ui);
+  font-size: 0.95rem;
+}
+select,
+button {
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--ink-line);
+  padding: 8px 12px;
+  cursor: pointer;
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+button:focus-visible,
+select:focus-visible,
+input:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.dossier-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px 20px;
+  margin: 0;
+}
+.dossier-field {
+  border-bottom: 1px dotted var(--ink-line);
+  padding-bottom: 6px;
+}
+.dossier-field dt {
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  color: var(--paper-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.dossier-field dd {
+  margin: 2px 0 0;
+  font-family: var(--font-display);
+}
+.dossier-field.is-perturbed dd {
+  color: var(--accent);
+}
+.redacted-stamp,
+.perturbed-stamp {
+  display: inline-block;
+  font-family: var(--font-ui);
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-left: 6px;
+  padding: 1px 5px;
+  border: 1px solid currentColor;
+}
+.redacted-stamp {
+  color: var(--paper-dim);
+}
+.perturbed-stamp {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.verdict-badge {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  letter-spacing: 0.04em;
+  border: 2px solid var(--accent);
+  color: var(--accent);
+  display: inline-block;
+  padding: 8px 16px;
+  transform: rotate(-1deg);
+}
+.verdict-probability {
+  margin-top: 14px;
+}
+.recomputed-note {
+  color: var(--accent);
+  font-style: italic;
+}
+.verdict-ground-truth {
+  color: var(--paper-dim);
+  font-size: 0.9rem;
+}
+
+.perturb-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+.perturb-row {
+  display: grid;
+  grid-template-columns: 180px 1fr 70px;
+  align-items: center;
+  gap: 10px;
+}
+.perturb-row output {
+  font-family: var(--font-display);
+  text-align: right;
+}
+
+.flip-search {
+  display: flex;
+  align-items: end;
+  gap: 10px;
+  flex-wrap: wrap;
+  border-top: 1px dotted var(--ink-line);
+  padding-top: 14px;
+}
+.flip-result {
+  margin-top: 12px;
+  padding: 10px;
+  background: rgba(223, 81, 75, 0.1);
+  border-left: 3px solid var(--accent);
+}
+.flip-result button {
+  margin-left: 8px;
+}
+
+.reset-button {
+  margin-top: 16px;
+}
+
+.attribution-caveat {
+  font-size: 0.8rem;
+  color: var(--paper-dim);
+  border-left: 2px solid var(--paper-dim);
+  padding-left: 10px;
+  margin-bottom: 16px;
+}
+.attribution-bars {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.attribution-bars li {
+  display: grid;
+  grid-template-columns: 160px 1fr 70px;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+}
+.bar-track {
+  background: var(--ink-line);
+  height: 10px;
+  position: relative;
+}
+.bar-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  height: 100%;
+}
+.is-positive .bar-fill {
+  background: var(--accent);
+}
+.is-negative .bar-fill {
+  background: var(--paper-dim);
+}
+.bar-value {
+  font-family: var(--font-display);
+  text-align: right;
+}
+
+.contradictory-intro {
+  color: var(--paper-dim);
+}
+.contradictory-identical {
+  color: var(--accent);
+  font-weight: bold;
+}
+.contradictory-diff {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+}
+.contradictory-diff li {
+  padding: 4px 0;
+  border-bottom: 1px dotted var(--ink-line);
+}
+
+@media (max-width: 640px) {
+  .tribunal-scene {
+    padding: 16px 14px 48px;
+  }
+  .dossier-fields {
+    grid-template-columns: 1fr;
+  }
+  .perturb-row,
+  .attribution-bars li {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+  .perturb-row output {
+    text-align: left;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tribunal-scene * {
+    transition: none !important;
+  }
+}
