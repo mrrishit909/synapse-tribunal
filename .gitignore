@@ -2,3 +2,10 @@ node_modules/
 dist/
 playwright-report/
 test-results/
+.venv/
+__pycache__/
+*.pyc
+research/data/raw/*.csv
+research/data/raw/_cache/
+data/precomputed/full_test_fixture.json
+.pytest_cache/
