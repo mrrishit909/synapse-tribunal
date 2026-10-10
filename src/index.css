@@ -4,6 +4,15 @@
 :root {
   color-scheme: dark;
   box-sizing: border-box;
+  scroll-behavior: smooth;
+}
+
+/* Chapter-nav anchor jumps use the browser's native hash scroll; honoring reduced-motion
+   here means no custom scroll-animation code is needed to respect the preference. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    scroll-behavior: auto;
+  }
 }
 
 * {

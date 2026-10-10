@@ -1,9 +1,54 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SCREENSHOTS_DIR = path.join(__dirname, "..", "verification", "SCREENSHOTS");
+
+async function gotoAndSkipIntro(page: Page) {
+  await page.goto("/");
+  // .isVisible() does not auto-wait -- called immediately after goto, before React has
+  // rendered, it can return false and silently skip the click, leaving the intro overlay
+  // active for the rest of the test (a real bug this caught: a screenshot meant to be of
+  // chapter 2 turned out to be the intro's first beat because the click never happened).
+  // Wait for either outcome with an explicit race instead of a synchronous visibility check.
+  await Promise.race([
+    page.getByRole("button", { name: /skip intro/i }).waitFor({ state: "visible" }),
+    page.getByTestId("tribunal-scene").waitFor({ state: "visible" }),
+  ]);
+  const skip = page.getByRole("button", { name: /skip intro/i });
+  if (await skip.isVisible().catch(() => false)) {
+    await skip.click();
+  }
+  await expect(page.getByTestId("tribunal-scene")).toBeVisible();
+  await expect(page.getByRole("region", { name: /opening sequence/i })).toHaveCount(0);
+}
+
+async function opacityOf(page: Page, selector: string) {
+  return page.locator(selector).evaluate((el) => Number(getComputedStyle(el).opacity));
+}
+
+test("cinematic intro: plays, is keyboard-skippable, hands off into chapter 1", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("region", { name: /opening sequence/i })).toBeVisible();
+
+  const skip = page.getByRole("button", { name: /skip intro/i });
+  await skip.focus();
+  await page.keyboard.press("Enter");
+
+  await expect(page.getByRole("region", { name: /opening sequence/i })).toHaveCount(0);
+  await expect(page.getByTestId("tribunal-scene")).toBeVisible();
+  await expect(page.getByText(/PREDICTED:/)).toBeVisible();
+});
+
+test("reduced motion: intro is skipped entirely, final state loads directly", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/");
+  await expect(page.getByRole("region", { name: /opening sequence/i })).toHaveCount(0);
+  await expect(page.getByTestId("tribunal-scene")).toBeVisible();
+  const opacity = await opacityOf(page, "#chapter-1");
+  expect(opacity).toBe(1);
+});
 
 test("vertical slice: case browser, perturbation, attribution, flip, reset", async ({ page }) => {
   const consoleErrors: string[] = [];
@@ -11,28 +56,26 @@ test("vertical slice: case browser, perturbation, attribution, flip, reset", asy
     if (msg.type() === "error") consoleErrors.push(msg.text());
   });
 
-  await page.goto("/");
-  await expect(page.getByTestId("tribunal-scene")).toBeVisible();
+  await gotoAndSkipIntro(page);
   await expect(page.getByText(/PREDICTED:/)).toBeVisible();
 
-  // Playwright's "visible" check does not treat opacity:0 as hidden, so an entrance
-  // animation that leaves later panels transparent would still pass a bare
-  // toBeVisible() assertion -- this caught a real bug (a 1.2s stagger left panels
-  // 2-6 blank in an actual screenshot) that the functional assertions alone missed.
+  // Chapter 1 is in view at load; Playwright's "visible" check does not treat opacity:0
+  // as hidden, so this explicit check is what actually caught the earlier stagger bug.
   await expect(async () => {
-    const opacities = await page.locator(".dossier-panel").evaluateAll((els) =>
-      els.map((el) => Number(getComputedStyle(el).opacity)),
-    );
-    expect(opacities.every((o) => o === 1)).toBe(true);
+    expect(await opacityOf(page, "#chapter-1")).toBe(1);
   }).toPass({ timeout: 2000 });
 
   // SYN-INT-004: perturb an actionable feature, verify a real recompute happened.
+  // .fill() auto-scrolls chapter 3 into view, which exercises its own scroll reveal.
   const probabilityBefore = await page.locator(".verdict-probability strong").first().textContent();
   const slider = page.getByLabel(/hours worked/i);
   await slider.fill("5");
   await expect(page.getByText(/recomputed live after your edit/i)).toBeVisible();
   const probabilityAfter = await page.locator(".verdict-probability strong").first().textContent();
   expect(probabilityAfter).not.toBe(probabilityBefore);
+  await expect(async () => {
+    expect(await opacityOf(page, "#chapter-3")).toBe(1);
+  }).toPass({ timeout: 2000 });
 
   // Feasible-flip search (the counterfactual mode folded into SYN-INT-004).
   await page.getByRole("button", { name: /^search$/i }).click();
@@ -42,21 +85,43 @@ test("vertical slice: case browser, perturbation, attribution, flip, reset", asy
   await page.getByRole("button", { name: /reset scenario/i }).click();
   await expect(page.getByText(/recomputed live after your edit/i)).toHaveCount(0);
 
-  // Contradictory-case evidence is present (dossier-required scope).
-  await expect(page.getByText(/contradictory case/i)).toBeVisible();
+  // Contradictory-case evidence is present (dossier-required scope, chapter 2).
+  await page.getByText(/nearest contradictory case/i).scrollIntoViewIfNeeded();
+  await expect(page.getByText(/nearest contradictory case/i)).toBeVisible();
 
   // Immutable features never render an edit control.
   await expect(page.getByLabel(/^age$/i)).toHaveCount(0);
   await expect(page.getByLabel(/^sex$/i)).toHaveCount(0);
 
   expect(consoleErrors, `console errors: ${consoleErrors.join("; ")}`).toHaveLength(0);
+});
 
-  await page.screenshot({ path: path.join(SCREENSHOTS_DIR, "tribunal-desktop.png"), fullPage: true });
+test("all 6 chapters reveal on forward scroll and the chapter nav tracks them", async ({ page }) => {
+  await gotoAndSkipIntro(page);
+
+  for (let i = 1; i <= 6; i++) {
+    // scrollIntoViewIfNeeded only scrolls the minimal distance to make an element
+    // visible, which for a short chapter may not bring its top near the viewport's
+    // active-line threshold the nav uses -- scroll it flush to the top instead, for a
+    // deterministic position that actually exercises the nav's scrollspy logic.
+    await page.locator(`#chapter-${i}`).evaluate((el) => el.scrollIntoView({ block: "start" }));
+    await expect(async () => {
+      expect(await opacityOf(page, `#chapter-${i}`)).toBe(1);
+    }).toPass({ timeout: 2000 });
+    await expect(page.locator(`.chapter-nav a[href="#chapter-${i}"][aria-current="true"]`)).toBeVisible();
+    // Per-chapter VIEWPORT screenshots at the actual scroll position, not fullPage:
+    // this project's own CLAUDE.md flags fullPage captures as able to conceal scroll
+    // defects, and a real one turned up here -- fullPage: true baked in a visible
+    // fragment of the already-unmounted intro overlay (confirmed via a standalone
+    // script that the live DOM has zero .intro-sequence nodes at this point; it's a
+    // Chromium full-page-compositing artifact from a since-removed position:fixed
+    // layer, not an application bug). Per-chapter shots avoid it entirely.
+    await page.screenshot({ path: path.join(SCREENSHOTS_DIR, `tribunal-chapter-${i}.png`) });
+  }
 });
 
 test("switching the selected case (SYN-INT-001) recomputes and clears perturbation", async ({ page }) => {
-  await page.goto("/");
-  await expect(page.getByTestId("tribunal-scene")).toBeVisible();
+  await gotoAndSkipIntro(page);
 
   const caseNumberBefore = await page.locator(".dossier-case-number").textContent();
   const select = page.getByLabel(/test-set case/i);
@@ -68,11 +133,11 @@ test("switching the selected case (SYN-INT-001) recomputes and clears perturbati
 });
 
 test("switching model (SYN-INT-002) shows the real fixture probability and disables perturbation", async ({ page }) => {
-  await page.goto("/");
-  await expect(page.getByTestId("tribunal-scene")).toBeVisible();
+  await gotoAndSkipIntro(page);
 
   await page.getByRole("button", { name: /gradient-boosted trees/i }).click();
   await expect(page.getByText(/no live evaluator exists for this model/i)).toBeVisible();
+  await page.getByText(/perturbation is disabled while the boosting model is active/i).scrollIntoViewIfNeeded();
   await expect(page.getByText(/perturbation is disabled while the boosting model is active/i)).toBeVisible();
 
   await page.getByRole("button", { name: /logistic regression/i }).click();
@@ -80,30 +145,30 @@ test("switching model (SYN-INT-002) shows the real fixture probability and disab
 });
 
 test("changing the threshold (SYN-INT-003) updates the confusion-matrix panel", async ({ page }) => {
-  await page.goto("/");
-  await expect(page.getByTestId("tribunal-scene")).toBeVisible();
+  await gotoAndSkipIntro(page);
 
-  const confusionBefore = await page.locator(".confusion-grid").textContent();
   const slider = page.getByLabel(/classify as "exceeds \$50k" when probability/i);
+  await slider.scrollIntoViewIfNeeded();
+  const confusionBefore = await page.locator(".confusion-grid").textContent();
   await slider.fill("0.9");
   await expect(page.locator(".confusion-grid")).not.toHaveText(confusionBefore ?? "");
 });
 
 test("selecting a calibration bin (SYN-INT-005) shows a real cohort", async ({ page }) => {
-  await page.goto("/");
-  await expect(page.getByTestId("tribunal-scene")).toBeVisible();
+  await gotoAndSkipIntro(page);
 
   const bins = page.locator(".calibration-bin");
+  await bins.first().scrollIntoViewIfNeeded();
   await expect(bins).toHaveCount(10);
   await bins.first().click();
   await expect(page.locator(".calibration-detail")).toBeVisible();
 });
 
 test("comparing two cases (SYN-INT-006) shows two real attribution panels", async ({ page }) => {
-  await page.goto("/");
-  await expect(page.getByTestId("tribunal-scene")).toBeVisible();
+  await gotoAndSkipIntro(page);
 
   const select = page.getByLabel(/compare case .* against/i);
+  await select.scrollIntoViewIfNeeded();
   const options = await select.locator("option").all();
   const secondValue = await options[1].getAttribute("value");
   await select.selectOption(secondValue!);
@@ -112,8 +177,7 @@ test("comparing two cases (SYN-INT-006) shows two real attribution panels", asyn
 });
 
 test("keyboard operability: perturb and search without a mouse", async ({ page }) => {
-  await page.goto("/");
-  await expect(page.getByTestId("tribunal-scene")).toBeVisible();
+  await gotoAndSkipIntro(page);
 
   const slider = page.getByLabel(/hours worked/i);
   await slider.focus();
@@ -126,13 +190,19 @@ test("keyboard operability: perturb and search without a mouse", async ({ page }
   await expect(page.getByText(/recomputed live after your edit/i)).toHaveCount(0);
 });
 
-test("reduced motion: scene renders immediately with no entrance animation to wait out", async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.goto("/");
-  await expect(page.getByTestId("tribunal-scene")).toBeVisible();
-  // Panels must be at full opacity immediately, not mid-tween, when motion is reduced.
-  const opacity = await page.locator(".dossier-panel").first().evaluate((el) => getComputedStyle(el).opacity);
-  expect(Number(opacity)).toBe(1);
+test("reverse scroll: scrolling back above a chapter's start reverses its reveal", async ({ page }) => {
+  await gotoAndSkipIntro(page);
+
+  await page.locator("#chapter-6").scrollIntoViewIfNeeded();
+  await expect(async () => {
+    expect(await opacityOf(page, "#chapter-6")).toBe(1);
+  }).toPass({ timeout: 2000 });
+
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.waitForTimeout(300); // ScrollTrigger's own reverse tween duration
+
+  const chapter6Opacity = await opacityOf(page, "#chapter-6");
+  expect(chapter6Opacity).toBeLessThan(1);
 });
 
 test.describe("responsive viewports", () => {
@@ -144,20 +214,27 @@ test.describe("responsive viewports", () => {
   for (const vp of viewports) {
     test(`renders without horizontal overflow at ${vp.name}`, async ({ page }) => {
       await page.setViewportSize({ width: vp.width, height: vp.height });
-      await page.goto("/");
-      await expect(page.getByTestId("tribunal-scene")).toBeVisible();
-      await expect(async () => {
-        const opacities = await page.locator(".dossier-panel").evaluateAll((els) =>
-          els.map((el) => Number(getComputedStyle(el).opacity)),
-        );
-        expect(opacities.every((o) => o === 1)).toBe(true);
-      }).toPass({ timeout: 2000 });
+      await gotoAndSkipIntro(page);
+
+      // Scroll through every chapter, confirming each is revealed, and capture a real
+      // VIEWPORT screenshot at that scroll position -- not fullPage: true, which bakes
+      // in a visible artifact of the already-unmounted intro overlay in Chromium (see
+      // the chapter-reveal test above for the confirmed root cause). Per-chapter shots
+      // also directly match this project's own evidence requirement (entry per chapter
+      // at each breakpoint), not a single flattened composite.
+      for (let i = 1; i <= 6; i++) {
+        await page.locator(`#chapter-${i}`).scrollIntoViewIfNeeded();
+        await expect(async () => {
+          expect(await opacityOf(page, `#chapter-${i}`)).toBe(1);
+        }).toPass({ timeout: 2000 });
+        await page.screenshot({ path: path.join(SCREENSHOTS_DIR, `tribunal-${vp.name}-chapter-${i}.png`) });
+      }
+
       const [scrollWidth, clientWidth] = await page.evaluate(() => [
         document.documentElement.scrollWidth,
         document.documentElement.clientWidth,
       ]);
       expect(scrollWidth).toBeLessThanOrEqual(clientWidth + 1);
-      await page.screenshot({ path: path.join(SCREENSHOTS_DIR, `tribunal-${vp.name}.png`), fullPage: true });
     });
   }
 });

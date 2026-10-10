@@ -92,7 +92,7 @@ describe('Tribunal scene (SYN-INT-004 vertical slice)', () => {
   it('shows the contradictory case panel with real differing-feature data', async () => {
     render(<Tribunal />)
     await waitFor(() => expect(screen.getByTestId('tribunal-scene')).toBeInTheDocument())
-    expect(screen.getByText(/contradictory case/i)).toBeInTheDocument()
+    expect(screen.getByText(/nearest contradictory case/i)).toBeInTheDocument()
   })
 
   it('switching the selected case recomputes the panel and clears any active perturbation (SYN-INT-001)', async () => {
