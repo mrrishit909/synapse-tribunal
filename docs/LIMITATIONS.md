@@ -52,10 +52,12 @@ built and tested in Chromium, Firefox and WebKit. What remains limited:
 
 ## Deployment
 
-Live on GitHub Pages since 2026-10-11 (`docs/DEPLOYMENT.md`). CI rebuilds, typechecks, lints
-and runs Vitest on every push to `main`, but not Playwright or pytest: the full gate
-(`npm run release:check`) is run locally before pushing, so a push that skips it would deploy
-without the browser suite.
+Live on GitHub Pages since 2026-10-11 (`docs/DEPLOYMENT.md`). Since the 2026-10-11 maintenance
+pass CI runs the full gate (typecheck, lint, Vitest, fixture reproduction + pytest, Playwright with
+axe in all three engines, build) and the deploy job waits for all of it. Remaining caveats: the
+CI fixture check allows equally-near contradictory cases to differ by platform (a 1-NN tie-break;
+`train.py` has no deterministic tie-break), and CI fetches the dataset from OpenML (cached), so an
+OpenML outage on a cold cache fails the Python job.
 
 ## Process
 
