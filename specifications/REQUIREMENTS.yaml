@@ -111,7 +111,7 @@ gates:
   - id: SYN-RELEASE-001
     description: "Production build, Pages base path, deployed smoke test, honest limitations."
     status: independently_verified
-    evidence: ["Production build clean: 174/174 Playwright (58 x chromium/firefox/webkit,
+    evidence: ["Production build clean: 189/189 Playwright (63 x chromium/firefox/webkit,
       incl. axe-core), 25 vitest, 69 pytest, tsc/oxlint clean", "Lighthouse desktop
       71-100 across runs (variance disclosed, docs/PERFORMANCE_BUDGETS.md), mobile
       98 performance / 100 accessibility; the final review's own cold desktop run: 100",

@@ -365,14 +365,27 @@ test.describe("responsive compositions", () => {
     expect(m.lines).toBeLessThan(20); // one line of 0.72rem text, not two
   });
 
-  test("nav links' visible text matches their accessible name (WCAG 2.5.3)", async ({ page }) => {
-    await page.setViewportSize({ width: 1440, height: 900 });
-    await gotoAndSkipIntro(page);
-    for (const a of await page.locator(".chapter-nav a").all()) {
-      const visible = (await a.innerText()).replace(/\s+/g, " ").trim();
-      expect(await a.getAttribute("aria-label")).toBe(visible);
-    }
-  });
+  // Every composition: an earlier tablet label ("03 Attribution") wasn't in its name
+  // ("03 Feature attribution"), and flex layout there glued "03Attribution" together.
+  for (const [w, h] of [[1440, 900], [1024, 768], [768, 1024], [390, 844]] as const) {
+    test(`${w}px: nav link visible text is inside its accessible name (WCAG 2.5.3)`, async ({ page }) => {
+      await page.setViewportSize({ width: w, height: h });
+      await gotoAndSkipIntro(page);
+      for (const a of await page.locator(".chapter-nav a").all()) {
+        const name = (await a.getAttribute("aria-label"))!;
+        // Rendered text with real gaps: innerText of flex items is concatenated without
+        // the dropped space, so measure the visible spans' boxes instead.
+        const parts = await a.evaluate((el) =>
+          [...el.querySelectorAll("span")]
+            .filter((s) => getComputedStyle(s).display !== "none")
+            .map((s) => ({ text: s.textContent!, left: s.getBoundingClientRect().left, right: s.getBoundingClientRect().right })),
+        );
+        const visible = parts.map((p) => p.text).join(" ");
+        expect(name.startsWith(visible), `${visible} vs ${name}`).toBe(true);
+        for (let i = 1; i < parts.length; i++) expect(parts[i].left - parts[i - 1].right).toBeGreaterThanOrEqual(4);
+      }
+    });
+  }
 
   // Measured nav geometry, not just "no horizontal overflow": the old layout passed every
   // overflow check while its fixed chapter rail sat ON TOP of the content column (up to
@@ -637,6 +650,30 @@ test.describe("WebGL stage", () => {
 });
 
 test.describe("accessibility (axe-core)", () => {
+  // Tablet and phone widths, WCAG 2.2 tags included: WebKit's native selects rendered 23px
+  // tall there (it ignores padding/min-height), failing target-size, and the desktop-only
+  // audits above never saw it.
+  for (const [w, h] of [[768, 1024], [390, 844]] as const) {
+    test(`${w}px: no WCAG 2.2 AA violations in any chapter, and selects meet target size`, async ({ page }) => {
+      test.setTimeout(60000); // six full axe passes; Firefox needs ~31s, over the 30s default
+      await page.setViewportSize({ width: w, height: h });
+      await gotoAndSkipIntro(page);
+      const minH = await page.locator("select").evaluateAll((els) => Math.min(...els.map((e) => e.getBoundingClientRect().height)));
+      expect(minH).toBeGreaterThanOrEqual(w < 768 ? 44 : 24);
+      for (let i = 1; i <= 6; i++) {
+        await page.locator(`#chapter-${i}`).evaluate((el) => el.scrollIntoView({ block: "start" }));
+        await expect(async () => {
+          expect(await page.locator(`#chapter-${i}`).evaluate((el) => Number(getComputedStyle(el).opacity))).toBe(1);
+        }).toPass({ timeout: 4000 });
+        const results = await new AxeBuilder({ page })
+          .include(`#chapter-${i}`)
+          .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
+          .analyze();
+        expect(results.violations, `chapter ${i}: ${JSON.stringify(results.violations, null, 2)}`).toEqual([]);
+      }
+    });
+  }
+
   test("no violations at page load (chapter 1, intro dismissed)", async ({ page }) => {
     await gotoAndSkipIntro(page);
     // Audit after the entrance reveal settles, not mid-fade: a first version of this

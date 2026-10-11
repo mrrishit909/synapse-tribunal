@@ -54,7 +54,7 @@ Three deliberate compositions, each with its own navigation model, not one layou
 | Width | Navigation | Verdict while editing | Scene | Touch |
 |---|---|---|---|---|
 | >=1300px (desktop) | Fixed side rail in the right margin | Chapter 1 badge only; the wide layout keeps context close | Full WebGL evidence chamber | 24px rail targets |
-| 768-1299px (tablet/laptop) | Sticky top tab bar, short labels, active tab underlined | Live verdict strip pinned under the tab bar once chapter 1 scrolls away | Full WebGL | 46px tabs |
+| 768-1299px (tablet/laptop) | Sticky top tab bar, full chapter names, active tab underlined | Live verdict strip pinned under the tab bar once chapter 1 scrolls away | Full WebGL | 46px tabs |
 | <768px (mobile) | Fixed bottom tab bar, chapter numbers only, thumb-reachable | Live verdict strip pinned to the top | No WebGL (never fetched), static gradient | 44px minimum on every control |
 
 Why the verdict strip exists: on a narrow screen the perturbation controls (chapter 3) and the

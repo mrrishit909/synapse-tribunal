@@ -33,9 +33,6 @@
   outline-offset: 2px;
 }
 
-.nav-short {
-  display: none;
-}
 
 /* --- Wide desktop: side rail --- */
 @media (min-width: 1300px) {
@@ -88,17 +85,14 @@
     align-items: center;
     box-sizing: border-box;
     height: 46px;
-    padding: 0 10px;
+    padding: 0 8px;
+    /* Flex drops the space text node between number and name; gap restores it. Full
+       names fit down to 768px (measured: 761px of 768 at 10px padding, 8px leaves more). */
+    gap: 1ch;
     border-bottom: 2px solid transparent;
   }
   .chapter-nav a[aria-current='true'] {
     border-bottom-color: #df514b;
-  }
-  .nav-name {
-    display: none;
-  }
-  .nav-short {
-    display: inline;
   }
 }
 
@@ -131,11 +125,7 @@
   .chapter-nav a[aria-current='true'] {
     border-top-color: #df514b;
   }
-  .nav-num {
-    margin-right: 0;
-  }
-  .nav-name,
-  .nav-short {
+  .nav-name {
     display: none;
   }
 }

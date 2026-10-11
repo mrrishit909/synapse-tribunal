@@ -1,16 +1,16 @@
 import { useEffect, useState } from 'react'
 import './ChapterNav.css'
 
-// `short` must be a case-insensitive substring of `name`: the tablet tab bar shows
-// `num + short` while each link's aria-label is `num + name`, and WCAG 2.5.3 (label in
-// name) requires the accessible name to contain the visible text.
+// Each link's aria-label is `num + name`. Desktop and tablet show exactly that text and
+// phones show only `num` (a prefix of it), so the visible label is always inside the
+// accessible name (WCAG 2.5.3). A shorter tablet label ("03 Attribution") broke that.
 const CHAPTERS = [
-  { id: 'chapter-1', num: '01', name: 'Prediction', short: 'Prediction' },
-  { id: 'chapter-2', num: '02', name: 'Training context', short: 'Training' },
-  { id: 'chapter-3', num: '03', name: 'Feature attribution', short: 'Attribution' },
-  { id: 'chapter-4', num: '04', name: 'Thresholding', short: 'Threshold' },
-  { id: 'chapter-5', num: '05', name: 'Calibration', short: 'Calibration' },
-  { id: 'chapter-6', num: '06', name: 'Verdict', short: 'Verdict' },
+  { id: 'chapter-1', num: '01', name: 'Prediction' },
+  { id: 'chapter-2', num: '02', name: 'Training context' },
+  { id: 'chapter-3', num: '03', name: 'Feature attribution' },
+  { id: 'chapter-4', num: '04', name: 'Thresholding' },
+  { id: 'chapter-5', num: '05', name: 'Calibration' },
+  { id: 'chapter-6', num: '06', name: 'Verdict' },
 ]
 
 const ACTIVE_LINE_PX = 160 // distance from the top of the viewport that counts as "current"
@@ -79,7 +79,6 @@ export default function ChapterNav({ inert = false }: { inert?: boolean }) {
                   matching the aria-label (WCAG 2.5.3 label in name). */}
               <span className="nav-num">{c.num}</span>{' '}
               <span className="nav-name">{c.name}</span>
-              <span className="nav-short">{c.short}</span>
             </a>
           </li>
         ))}

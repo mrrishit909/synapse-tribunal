@@ -59,7 +59,7 @@ actionable/immutable reasoning in `specifications/DATA_CONTRACT.yaml`; see `docs
 
 ## 6. Browser tests
 
-174/174 Playwright: 58 tests x Chromium, Firefox and WebKit. Coverage:
+189/189 Playwright: 63 tests x Chromium, Firefox and WebKit. Coverage:
 - all 6 interactions;
 - intro: skip, keyboard, reduced motion, on-schedule completion under scrolling, hand-off to
   chapter 1 or a deep link;
@@ -144,7 +144,7 @@ only moves the desktop rail's right offset from 20px to 8px at >=1300px.
    - `unhandledrejection` not covered;
    - a stale comment;
    - stale TESTING/RESUME/ledger;
-   - WebKit's small native selects (disclosed).
+   - WebKit's small native selects (disclosed then; fixed in Stage B with `appearance: none`).
 
 ## 11. Fixed defects (by commit)
 
@@ -167,7 +167,7 @@ The current list is `docs/LIMITATIONS.md`. In short:
   model; linear SHAP is exact only under independence; 22% leakage is disclosed.
 - **Data:** the data is from 1994.
 - **Mobile:** no WebGL scene, and controls are enlarged rather than moved into a bottom sheet.
-- **Layout:** chapter bodies reflow by column count; WebKit draws desktop selects small.
+- **Layout:** chapter bodies reflow by column count.
 - **Measurement:** desktop Lighthouse varies run to run on this machine.
 - **Process:** the ledger and docs are maintained by hand. They have been caught stale three
   times, and `release:check` verifies their structure, not every sentence.

@@ -44,8 +44,12 @@ built and tested in Chromium, Firefox and WebKit. What remains limited:
 - **Chapter bodies reflow by column count.** The three compositions differ in navigation, the
   live verdict strip, touch sizing and whether the WebGL scene loads; inside each chapter the
   layout is the same content reflowing (e.g. the feature reader goes 3, 2, 1 columns).
-- **WebKit draws native `<select>` controls about 20px tall on desktop** (it ignores padding on
-  unstyled selects). Cosmetic; touch/phone sizes are 44px.
+- **Sliders keep the browser's native track.** `accent-color` makes the filled part and thumb
+  the case-file red, but Chromium and Firefox still draw the unfilled track near-white; a fully
+  custom range style was not built.
+- **The WebGL scene can show faintly through panels.** Panels are 0.97 opaque, so a bright
+  wireframe line behind chapter 6's closing text is visible (text contrast stays above AA; the
+  live-site verification read it as readable). Playwright's WebKit also draws no backdrop blur.
 - **Desktop Lighthouse varies run to run on this machine** (71/97/100 across three identical
   runs, traced to CPU contention from unrelated processes). See `PERFORMANCE_BUDGETS.md`.
 - **The live verdict strip (tablet/mobile) is `aria-hidden`.** It duplicates the chapter 1
