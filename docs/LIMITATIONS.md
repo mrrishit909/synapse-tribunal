@@ -41,9 +41,6 @@ built and tested in Chromium, Firefox and WebKit. What remains limited:
   fixed bottom tab bar), a live verdict strip, and 44px minimum touch targets, but the
   perturbation controls are still the same slider/select stack as tablet, not a bottom-sheet.
   The Atlas stack guidance mentions bottom-sheet controls; that specific pattern is not built.
-- **The intro's beat labels pass through low contrast while fading.** Each beat fades 0 to 1
-  to 0; at full opacity the red label is 4.86:1 on the background (passes WCAG AA), but a
-  point-in-time audit taken mid-fade can catch it lower. Transitional, not steady state.
 - **Desktop Lighthouse varies run to run on this machine** (71/97/100 across three identical
   runs, traced to CPU contention from unrelated processes). See `PERFORMANCE_BUDGETS.md`.
 - **The live verdict strip (tablet/mobile) is `aria-hidden`.** It duplicates the chapter 1

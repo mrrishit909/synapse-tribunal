@@ -3,8 +3,12 @@
 ## Three motion layers
 
 1. **The cinematic intro** (`src/scenes/IntroSequence.tsx`): a single GSAP timeline, 4 beats over
-   12s (0-3s/3-6s/6-9s/9-12s per the dossier storyboard), each beat fading its own text in and
-   out. Hands off into chapter 1 by unmounting the fixed-position overlay (never an in-flow
+   12s (0-3s/3-6s/6-9s/9-12s per the dossier storyboard). Each beat wipes in left to right and
+   wipes off to the right via `clip-path` on a content-sized wrapper (a redaction lifting, then
+   closing). Not an opacity fade: a fade passes through low contrast by definition, and a cold
+   Lighthouse run caught beat 1 at 1.84:1 mid-fade. With the wipe, text is full colour wherever
+   it is visible; `e2e/tribunal.spec.ts` audits contrast mid-transition at three points to keep it
+   that way. Hands off into chapter 1 by unmounting the fixed-position overlay (never an in-flow
    element, so unmounting it causes zero layout shift -- the CLS lesson from an earlier project in
    this portfolio). Keyboard-skippable (a real `<button>`, natively focusable/activatable).
    `prefers-reduced-motion` skips straight to the dismissed state -- no intro renders at all.
