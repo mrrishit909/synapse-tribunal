@@ -66,6 +66,13 @@ Why the rail starts at 1300px: the earlier layout put the fixed rail at every wi
 Measured, it overlapped the 920px content column by up to 129px anywhere from ~900px to 1280px
 (laptop widths no test viewport had covered). The rail now only appears where the margin can hold
 it, and `e2e/tribunal.spec.ts` checks rail/content overlap at nine widths from 360 to 1920.
+The rail also has a near-opaque backing: an independent review measured the active (red) item
+at 3.4:1 when a red evidence plane rendered behind it. axe can't see canvas pixels, so contrast
+over the WebGL scene is guaranteed by the backing, not by an audit.
+
+The chapter bodies themselves still reflow by column count (the chapter 3 feature reader goes
+3, 2, 1 columns); the three compositions differ in navigation, context and scene, not in each
+chapter's internal layout.
 
 What mobile still lacks is listed in `docs/LIMITATIONS.md` (no WebGL scene; controls enlarged
 rather than moved into a bottom sheet).

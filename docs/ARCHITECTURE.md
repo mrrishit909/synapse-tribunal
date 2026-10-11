@@ -25,7 +25,7 @@ src/scenes/              the application UI
                             case, active model, threshold, perturbation, comparison,
                             calibration bin), renders the intro + nav + 6 chapters
   IntroSequence.tsx          0-12s cinematic opening, GSAP timeline
-  ChapterNav.tsx              fixed rail, scroll-listener-based active-chapter tracking
+  ChapterNav.tsx              rail (>=1300px) / top tabs / bottom bar, scroll-listener-based active-chapter tracking
 
 src/motion/              shared motion hooks (useChapterReveal, useReducedMotion)
 src/webgl/               persistent WebGL background (see below)
@@ -63,7 +63,7 @@ decision history, including a self-correction). Architecture:
      background, nothing fetched).
   2. `useIsMobileViewport()` -- below 768px, the WebGL chunk is never fetched (Atlas's own
      explicit mobile 2D requirement, also a real measured performance fix: mobile Lighthouse
-     Performance was 60 with the chunk loading there, 96-97 without).
+     Performance was 60 with the chunk loading there, 96-98 without).
   3. `WebGLErrorBoundary.tsx` -- catches genuine React-render-phase failures in the WebGL
      subtree.
   4. A `window` 'error' listener scoped to errors originating from the WebGLStage chunk
@@ -71,7 +71,10 @@ decision history, including a self-correction). Architecture:
      Three.js's own internal renderer can throw from inside its own requestAnimationFrame loop,
      which is NOT a React render-phase error and error boundaries cannot catch it. An earlier,
      unscoped version of this listener caught ANY page error and permanently killed the renderer;
-     fixed to only react to errors actually from the WebGL chunk.
+     fixed to only react to errors actually from the WebGL chunk. `unhandledrejection` gets the
+     same stack check (async loader/shader failures). This depends on three/R3F being bundled
+     INTO the WebGLStage chunk, so `npm run release:check` asserts three's `WebGLRenderer` code
+     appears in no other chunk.
   5. Real `webglcontextlost`/`webglcontextrestored` handling with a bounded recovery window.
 
 ## Why no state management library

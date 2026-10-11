@@ -6,29 +6,40 @@
 |---|---|---|
 | Python reference engine | `.venv/bin/python -I -m pytest tests/unit -q` | 69 |
 | TypeScript engine + components | `npx vitest run` | 25 |
-| Browser (3 engines: Chromium/Firefox/WebKit) | `npx playwright test` | 84 (28 tests x 3 browsers) |
+| Browser (3 engines: Chromium/Firefox/WebKit) | `npx playwright test` | 150 (50 tests x 3 browsers) |
 | Typecheck | `npx tsc -b` | -- |
 | Lint | `npx oxlint` | -- |
+| Everything above, plus docs/ledger/chunking checks | `npm run release:check` | -- |
 
-All must be clean (0 failures, 0 type errors, 0 lint warnings) before any commit in this
-project's history -- verified every time, not assumed.
+All must be clean (0 failures, 0 type errors, 0 lint warnings) before a release commit.
+`npm run release:check` (`scripts/release-check.mjs`) runs every one of them and also checks:
+the working tree is clean before anything runs, the required docs exist, no requirement is left
+`unstarted`/`blocked`, and three's `WebGLRenderer` is bundled only in the `WebGLStage` chunk
+(the WebGL error fallback recognises renderer crashes by that chunk name; a vendor split would
+silently break it).
 
 ## What the Playwright suite covers
 
 - All 6 interactions (SYN-INT-001 through 006), functionally.
-- The cinematic intro: plays, is keyboard-skippable, hands off correctly, and (a real regression
-  test) completes on schedule even if the user scrolls repeatedly during it.
+- The cinematic intro: plays, is keyboard-skippable, completes on schedule even if the user
+  scrolls repeatedly during it, hands off to chapter 1 (or a `#chapter-N` deep link) rather than
+  wherever the page drifted under the overlay, and stays above WCAG AA contrast at sampled points
+  mid-transition (beats reveal by clip-path wipe, not opacity fade).
 - Reduced motion: the intro is skipped entirely; the WebGL camera holds a static position.
 - All 6 chapters revealing on forward scroll, with the chapter nav correctly tracking the active
   one; reverse scroll un-reveals a chapter scrolled back above its start.
-- Responsive: 3 breakpoints (1440x900 / 768x1024 / 390x844), asserted to have zero horizontal
-  overflow, with real per-chapter screenshots at each (not `fullPage: true` -- see the note below).
-- WebGL: renders as a lazy-loaded separate chunk; reduced-motion static frame; zero idle render
-  loop; genuine `webglcontextlost` recovery; and (a real regression test) an unrelated page error
-  does NOT kill the renderer.
-- Accessibility: axe-core, zero violations, audited per-chapter (scoped to that chapter's own
-  section -- an unscoped whole-page scan was once caught flagging a NEIGHBORING chapter still
-  mid-reveal-animation, not the chapter under test) and on the intro overlay.
+- Responsive: 6 viewport sets (1920x1080, 1440x900, 1024x768, 768x1024, 390x844, 360x740) with
+  zero horizontal overflow and real per-chapter screenshots at each (not `fullPage: true`, see
+  below). Separately, nav geometry at nine widths (360 to 1920, including 1299/1300 either side of
+  the rail breakpoint): the desktop rail never overlaps content, tap targets are at least 24px
+  (44px on phones), the mobile bottom bar never covers the end of chapter 6, the tablet/mobile
+  verdict strip shows exactly the chapter-1 badge's recomputed probability, and the rail has an
+  opaque backing (its contrast over the WebGL canvas can't be audited by axe).
+- WebGL: lazy-loaded separate chunk; reduced-motion static frame; zero idle render loop; genuine
+  `webglcontextlost` falls back; a crash thrown inside the render loop falls back without
+  blanking the page; an unrelated page error or unhandled rejection does NOT kill the renderer.
+- Accessibility: axe-core, zero violations, per chapter (scoped to that chapter's own section,
+  since an unscoped scan once flagged a NEIGHBORING chapter still mid-reveal) and on the intro.
 
 ## A real `fullPage: true` screenshot bug, and why screenshots are per-chapter now
 

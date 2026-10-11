@@ -56,7 +56,7 @@ maintain a parallel copy of it.
 | Metric | Budget | Measured | Pass |
 |---|---|---|---|
 | Desktop Lighthouse Performance | >=90 | 71-100 across 3 runs (97, 100 in 2 of 3) | Yes, with disclosed variance below |
-| Mobile Lighthouse Performance | >=80 | 96-97 | Yes |
+| Mobile Lighthouse Performance | >=80 | 96-98 | Yes |
 | Desktop LCP | <=2.5s | 0.8-1.0s | Yes |
 | Mobile LCP | <=2.5s | 2.4s | Yes |
 | CLS (both) | <=0.1 | 0 | Yes |
@@ -81,4 +81,4 @@ below existed) scored Performance 60 -- LCP 3.5s, total blocking time 1,680ms --
 this document's own kill criteria and the Atlas's own "Mobile: ...2D fallback" requirement
 (`docs/projects/PROJECT_03.md`), the WebGL stage now never loads at all below a 768px viewport
 (`src/webgl/useIsMobileViewport.ts`) -- not hidden after loading, never fetched. Remeasured at
-Performance 96-97 after the fix.
+Performance 96-98 after the fix.

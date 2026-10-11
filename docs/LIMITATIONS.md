@@ -36,11 +36,16 @@ built and tested in Chromium, Firefox and WebKit. What remains limited:
 
 - **Mobile has no WebGL scene.** Below 768px the WebGL chunk is never fetched (an Atlas
   requirement for this project, and a measured performance fix: mobile Lighthouse went from 60
-  to 96-97). Mobile gets a static gradient background instead of the evidence chamber.
+  to 96-98). Mobile gets a static gradient background instead of the evidence chamber.
 - **Mobile controls are larger, not re-architected.** The phone composition has its own nav (a
   fixed bottom tab bar), a live verdict strip, and 44px minimum touch targets, but the
   perturbation controls are still the same slider/select stack as tablet, not a bottom-sheet.
   The Atlas stack guidance mentions bottom-sheet controls; that specific pattern is not built.
+- **Chapter bodies reflow by column count.** The three compositions differ in navigation, the
+  live verdict strip, touch sizing and whether the WebGL scene loads; inside each chapter the
+  layout is the same content reflowing (e.g. the feature reader goes 3, 2, 1 columns).
+- **WebKit draws native `<select>` controls about 20px tall on desktop** (it ignores padding on
+  unstyled selects). Cosmetic; touch/phone sizes are 44px.
 - **Desktop Lighthouse varies run to run on this machine** (71/97/100 across three identical
   runs, traced to CPU contention from unrelated processes). See `PERFORMANCE_BUDGETS.md`.
 - **The live verdict strip (tablet/mobile) is `aria-hidden`.** It duplicates the chapter 1
