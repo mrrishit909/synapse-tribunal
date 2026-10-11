@@ -24,6 +24,19 @@ function check(label, condition, detail) {
   results.push({ label, pass: !!condition, detail });
 }
 
+// --- Git working tree, checked FIRST ---
+// Running the test suites below has a real side effect: Playwright regenerates its own
+// screenshots on every run, which are tracked files -- checking "clean tree" AFTER running
+// them would always fail on pixel-level run-to-run differences that have nothing to do
+// with whether the COMMITTED state is clean. Checked here, before anything mutates
+// tracked files, so this verifies the state actually being audited.
+try {
+  const status = execSync("git status --porcelain", { encoding: "utf-8" });
+  check("git working tree is clean (checked before test runs)", status.trim() === "", status.trim() || undefined);
+} catch (err) {
+  check("git working tree is clean (checked before test runs)", false, String(err.message));
+}
+
 // --- Required documentation present ---
 const REQUIRED_DOCS = [
   "README.md",
@@ -70,14 +83,6 @@ try {
   /* no stray process, fine */
 }
 run("playwright (chromium + firefox + webkit, incl. axe-core)", "npx playwright test");
-
-// --- Git working tree ---
-try {
-  const status = execSync("git status --porcelain", { encoding: "utf-8" });
-  check("git working tree is clean", status.trim() === "", status.trim() || undefined);
-} catch (err) {
-  check("git working tree is clean", false, String(err.message));
-}
 
 // --- Report ---
 console.log("\n=== release:check ===\n");
