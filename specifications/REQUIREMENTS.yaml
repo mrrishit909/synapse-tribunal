@@ -108,14 +108,16 @@ gates:
       version before trusting it)."
   - id: SYN-RELEASE-001
     description: "Production build, Pages base path, deployed smoke test, honest limitations."
-    status: in_progress
+    status: independently_verified
     evidence: ["Production build clean (tsc/oxlint/vitest/pytest/playwright x3 browsers/
       axe-core all green)", "Lighthouse desktop 71-100 (variance disclosed,
       docs/PERFORMANCE_BUDGETS.md) / mobile 96-97, both independently spot-checked by
       the final review (its own cold Lighthouse run: desktop Performance 100)",
-      "docs/LIMITATIONS.md current; ARCHITECTURE/VISUAL_DESIGN/MOTION_SYSTEM/
-      DATA_SOURCES/TESTING/DEPLOYMENT.md being written (task #12)"]
+      "All required docs written (README/ARCHITECTURE/VISUAL_DESIGN/MOTION_SYSTEM/
+      DATA_SOURCES/TESTING/LIMITATIONS/DEPLOYMENT.md)",
+      "scripts/release-check.mjs: genuine PASS on every criterion, mutation-tested",
+      "verification/SYNAPSE_TRIBUNAL_FINAL_ACCEPTANCE_REPORT.md: ACCEPTED (Stage A)"]
     note: "Stage B (public deploy) requires separate explicit authorization per
-      SPEC_LOCK.md section 3; this gate's local-build half is what's tracked here. Not
-      yet independently_verified: the required docs set and the final acceptance report
-      are not complete yet (task #12, in progress)."
+      SPEC_LOCK.md section 3 and is NOT covered by this row's independently_verified
+      status -- only the local-build half (Pages base path not yet set, no deployment
+      has happened, see docs/DEPLOYMENT.md). Local release (Stage A) is closed."
