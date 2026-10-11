@@ -91,9 +91,8 @@ The case study, cover (captured from the real app), motion tile and home-shelf r
 Fixed after publication (2026-10-11 maintenance pass, regression tests in `e2e/tribunal.spec.ts`
 "panel and control finish"): near-white slider tracks, WebGL show-through on the 0.97 panels,
 the 0.96 tablet tab bar, WebKit's rounded select corners; and, in the portfolio repo, the
-1.95:1 case-study footer (now 4.65:1, enforced by its `build.py`). Remaining:
+1.95:1 case-study footer (now 4.65:1, enforced by its `build.py`); and CI coverage (CI now runs
+pytest and the 3-engine Playwright suite, and the deploy job waits on them). Remaining:
 
-- **CI coverage:** CI does not run Playwright or pytest. The full gate is a local step before
-  each push (`docs/LIMITATIONS.md`).
 - **Commit author:** commits use a local-hostname email, the same as the already-public
   CASCADIA repo.

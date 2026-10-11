@@ -11,7 +11,10 @@
 | Lint | `npx oxlint` | -- |
 | Everything above, plus docs/ledger/chunking checks | `npm run release:check` | -- |
 
-All must be clean (0 failures, 0 type errors, 0 lint warnings) before a release commit.
+All must be clean (0 failures, 0 type errors, 0 lint warnings) before a release commit. CI runs the
+same suites on every push and pull request, one Playwright job per engine, and the Pages deploy
+waits for all of them (`docs/DEPLOYMENT.md`); its Python job also checks that the committed
+fixtures reproduce from source (`scripts/compare_fixtures.py`).
 `npm run release:check` (`scripts/release-check.mjs`) runs every one of them and also checks:
 the working tree is clean before anything runs, the required docs exist, no requirement is left
 `unstarted`/`blocked`, and three's `WebGLRenderer` is bundled only in the `WebGLStage` chunk

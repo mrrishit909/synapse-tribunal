@@ -32,13 +32,25 @@ deployed copy (screenshots then go to `verification/LIVE_SCREENSHOTS/`).
 
 ## CI
 
-`.github/workflows/deploy.yml` runs on every push to `main`: `npm ci`, typecheck, lint, Vitest,
-build, then publishes `dist/` with `actions/deploy-pages`. The repository's Pages source must be set to
-"GitHub Actions" once (Settings, Pages, Source; or `gh api -X POST repos/<owner>/<repo>/pages -f
-build_type=workflow`), or the first deploy job fails. Only the deploy job has `pages: write` and
-`id-token: write`; the build job, which runs npm install scripts, is read-only. It does not run Playwright or pytest;
-`npm run release:check` covers those and is run locally against the exact commit before it is
-pushed.
+`.github/workflows/deploy.yml` runs on every push to `main` and on pull requests, as separate jobs:
+
+- **checks:** `tsc -b`, `oxlint`, Vitest.
+- **python:** regenerates the gitignored full test-set fixture from source (`fetch_adult.py` from
+  OpenML, cached; `train.py`), checks the committed `public/data/precomputed/*.json` reproduce
+  (`scripts/compare_fixtures.py`: same structure, numbers within 1e-4; Linux and macOS BLAS land
+  ~1e-7 apart; equally-near contradictory cases, where the 1-NN tie-break differs by platform, are
+  printed as TIE and allowed), then pytest.
+- **e2e:** the full Playwright suite including axe-core, one job per engine (Chromium, Firefox,
+  WebKit). Firefox runs headed under `xvfb-run`: headless Firefox on Linux has no WebGL, so the
+  WebGL-stage tests would only see the 2D fallback.
+- **build:** `npm run build` plus the WebGLRenderer-chunk invariant, then the Pages artifact.
+- **deploy:** `needs:` all four, and only on a push to `main` (never for a pull request).
+
+The repository's Pages source must be set to "GitHub Actions" once (Settings, Pages, Source; or
+`gh api -X POST repos/<owner>/<repo>/pages -f build_type=workflow`), or the first deploy job fails.
+Every job is read-only (`contents: read`, `persist-credentials: false`); only the deploy job has
+`pages: write` and `id-token: write`. No secrets are used. `npm run release:check` is still run
+locally before pushing (it also checks the docs/ledger and a clean tree).
 
 ## Pre-deployment checklist (all done for the Stage B release)
 
