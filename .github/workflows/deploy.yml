@@ -83,7 +83,16 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps ${{ matrix.browser }}
       - run: npx vite build
-      - run: npx playwright test --project=${{ matrix.browser }}
+      # Headless Firefox on Linux has no WebGL (the 6 WebGL-stage tests then only see the 2D
+      # fallback; webgl.force-enabled did not change that), so Firefox runs headed under Xvfb,
+      # where Mesa's software GL backs a real canvas. Chromium and WebKit get WebGL headless.
+      - name: Playwright tests
+        run: |
+          if [ "${{ matrix.browser }}" = firefox ]; then
+            xvfb-run -a npx playwright test --project=firefox --headed
+          else
+            npx playwright test --project=${{ matrix.browser }}
+          fi
       - if: failure()
         uses: actions/upload-artifact@v4
         with:

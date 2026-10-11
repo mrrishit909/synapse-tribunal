@@ -6,6 +6,12 @@ Each file is compared with its committed version (`git show HEAD:<path>`): same 
 strings and booleans, every number within 1e-4 (the project's documented Python/TypeScript parity
 bound). Not byte-for-byte: scikit-learn's lbfgs lands ~1e-7 apart on Linux vs macOS BLAS, which a
 plain `git diff` reports as a full rewrite.
+
+One documented exception: a sample row's `contradictory_case` is "the nearest training row with the
+opposite label". When two training rows are equally near (same distance to 1e-4), which one a
+1-NN lookup returns depends on float rounding, and Linux CI picks the other one for a handful of
+rows. Those are reported as TIE (same distance, same label, different but equally valid row) and
+do not fail the check; a different distance or label still fails.
 """
 import json
 import subprocess
@@ -20,6 +26,11 @@ def diffs(a, b, path="$"):
     ):
         if type(a) is not type(b):
             yield f"{path}: type {type(a).__name__} != {type(b).__name__}"
+        elif isinstance(a, dict) and "distance_in_transformed_space" in a and a.keys() == b.keys():
+            if a["label"] != b["label"] or list(diffs(a["distance_in_transformed_space"], b["distance_in_transformed_space"])):
+                yield f"{path}: different nearest distance/label {a['distance_in_transformed_space']} != {b['distance_in_transformed_space']}"
+            elif a != b:
+                print(f"      TIE {path}: equally near (distance {a['distance_in_transformed_space']}), different row")
         elif isinstance(a, dict):
             if a.keys() != b.keys():
                 yield f"{path}: keys differ {sorted(a.keys() ^ b.keys())[:5]}"
