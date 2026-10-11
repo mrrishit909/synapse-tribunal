@@ -59,13 +59,15 @@ actionable/immutable reasoning in `specifications/DATA_CONTRACT.yaml`; see `docs
 
 ## 6. Browser tests
 
-156/156 Playwright: 52 tests x Chromium, Firefox and WebKit. Coverage:
+174/174 Playwright: 58 tests x Chromium, Firefox and WebKit. Coverage:
 - all 6 interactions;
 - intro: skip, keyboard, reduced motion, on-schedule completion under scrolling, hand-off to
   chapter 1 or a deep link;
 - forward and reverse chapter reveal; scrollspy nav;
 - responsive: 6 screenshot viewports, nav geometry at 9 widths, tap targets, verdict strip
   parity with the badge, bottom bar clearance, top-tab navigation at 768 and 1024px;
+- cross-control reconciliation (chapter 6 vs chapter 1, combined chapter 3 edits, chapter 5's
+  marked band), intro inertness, nav label-in-name (added after Stage B's live verification);
 - WebGL: lazy chunk, reduced-motion static frame, idle loop, context loss, a crash inside the
   render loop, unrelated errors and rejections not killing the renderer.
 

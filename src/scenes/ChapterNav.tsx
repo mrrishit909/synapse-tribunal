@@ -25,7 +25,7 @@ const ACTIVE_LINE_PX = 160 // distance from the top of the viewport that counts 
  * is wrong once a chapter scrolls mostly off-screen above the viewport (its top becomes a
  * large negative number). Classic scrollspy logic (last chapter whose top has crossed an
  * active line) has no such ambiguity. */
-export default function ChapterNav() {
+export default function ChapterNav({ inert = false }: { inert?: boolean }) {
   const [activeId, setActiveId] = useState('chapter-1')
 
   useEffect(() => {
@@ -66,7 +66,7 @@ export default function ChapterNav() {
   }, [])
 
   return (
-    <nav className="chapter-nav" aria-label="Chapters">
+    <nav className="chapter-nav" aria-label="Chapters" inert={inert}>
       <ul>
         {CHAPTERS.map((c) => (
           <li key={c.id}>
@@ -75,7 +75,9 @@ export default function ChapterNav() {
               aria-label={`${c.num} ${c.name}`}
               aria-current={activeId === c.id ? 'true' : undefined}
             >
-              <span className="nav-num">{c.num}</span>
+              {/* A real space, not margin: the visible text then reads "01 Prediction",
+                  matching the aria-label (WCAG 2.5.3 label in name). */}
+              <span className="nav-num">{c.num}</span>{' '}
               <span className="nav-name">{c.name}</span>
               <span className="nav-short">{c.short}</span>
             </a>

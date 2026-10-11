@@ -6,7 +6,7 @@
 |---|---|---|
 | Python reference engine | `.venv/bin/python -I -m pytest tests/unit -q` | 69 |
 | TypeScript engine + components | `npx vitest run` | 25 |
-| Browser (3 engines: Chromium/Firefox/WebKit) | `npx playwright test` | 156 (52 tests x 3 browsers) |
+| Browser (3 engines: Chromium/Firefox/WebKit) | `npx playwright test` | 174 (58 tests x 3 browsers) |
 | Typecheck | `npx tsc -b` | -- |
 | Lint | `npx oxlint` | -- |
 | Everything above, plus docs/ledger/chunking checks | `npm run release:check` | -- |
@@ -36,6 +36,11 @@ silently break it).
   verdict strip shows exactly the chapter-1 badge's recomputed probability, and the rail has an
   opaque backing (its contrast over the WebGL canvas can't be audited by axe). Top-tab clicks at 768
   and 1024px activate the clicked chapter under the sticky bar and strip.
+- Cross-control reconciliation, added after the independent live-site verification found the
+  gaps: chapter 6 never compares a case with itself after chapter 1 switches to it; chapter 3
+  edits combine (a second edit keeps the first) and Reset clears them all; chapter 5 opens with
+  guidance and marks the band holding the live probability; content behind the intro is inert;
+  nav link text matches its accessible name; the 360px verdict strip names the model on one line.
 - WebGL: lazy-loaded separate chunk; reduced-motion static frame; zero idle render loop; genuine
   `webglcontextlost` falls back; a crash thrown inside the render loop falls back without
   blanking the page; an unrelated page error or unhandled rejection does NOT kill the renderer.

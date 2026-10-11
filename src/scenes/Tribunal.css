@@ -158,13 +158,24 @@ button {
   font-family: var(--font-ui);
   font-size: 0.95rem;
 }
+/* Dark, on-palette controls. color-scheme makes the native dropdown list and range track
+   dark too, and accent-color tints the slider fill and thumb with the case-file red (they
+   were the browser's default blue on a paper-white select before a live-site review). */
+.tribunal-scene {
+  color-scheme: dark;
+  accent-color: var(--accent);
+}
 select,
 button {
-  background: var(--paper);
-  color: var(--ink);
-  border: 1px solid var(--ink-line);
+  background: #1b1c23;
+  color: var(--paper);
+  border: 1px solid #4a4b53;
   padding: 8px 12px;
   cursor: pointer;
+}
+select:hover,
+button:hover:not(:disabled) {
+  border-color: var(--accent);
 }
 button:disabled {
   opacity: 0.5;
@@ -292,6 +303,13 @@ input:focus-visible {
   background: var(--accent);
   color: var(--ink);
   border-color: var(--accent);
+}
+.calibration-prompt {
+  color: var(--paper-dim);
+  margin: 0 0 14px;
+}
+.calibration-bin-mark {
+  font-weight: bold;
 }
 .calibration-detail {
   background: rgba(240, 238, 233, 0.05);
@@ -479,7 +497,7 @@ input:focus-visible {
     justify-content: center;
     gap: 14px;
     padding: 8px 14px;
-    background: rgba(16, 17, 22, 0.96);
+    background: #101116;
     border-bottom: 1px solid #df514b;
     color: #f0eee9;
     font-family: 'Courier New', 'IBM Plex Mono', ui-monospace, monospace;
@@ -521,8 +539,13 @@ input:focus-visible {
     gap: 10px;
     font-size: 0.72rem;
   }
-  .verdict-strip-meta {
+  /* No room for all four items on one line at 360px: the model matters more for reading the
+     number than the case id, which the page header already shows. */
+  .verdict-strip-case {
     display: none;
+  }
+  .verdict-strip > span {
+    white-space: nowrap;
   }
   /* Room for the fixed bottom tab bar (48px + safe area) so it never covers the end of
      chapter 6. */

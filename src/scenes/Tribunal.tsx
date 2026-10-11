@@ -25,24 +25,27 @@ function clampToBounds(manifest: ModelManifest, feature: string, value: number):
   return Math.min(hi, Math.max(lo, Math.round(value)))
 }
 
+// Every actionable feature the user has edited, by name. Edits combine: the live result is the
+// case with all of them applied (a live-site review found a second edit silently reverting
+// the first when this held a single {feature, value}).
+type Edits = Record<string, number | string>
+
 function RawReader({
   manifest,
   caseRow,
-  perturbedFeature,
-  perturbedValue,
+  edits,
 }: {
   manifest: ModelManifest
   caseRow: TestFixtureRow
-  perturbedFeature: string | null
-  perturbedValue: number | string | null
+  edits: Edits
 }) {
   return (
     <dl className="dossier-fields">
       {manifest.feature_order_raw.map((feature) => {
         const isActionable =
           manifest.actionable_numeric.includes(feature) || manifest.actionable_categorical.includes(feature)
-        const isPerturbed = feature === perturbedFeature
-        const displayValue = isPerturbed ? perturbedValue! : caseRow.raw[feature]
+        const isPerturbed = feature in edits
+        const displayValue = isPerturbed ? edits[feature] : caseRow.raw[feature]
         return (
           <div
             key={feature}
@@ -108,7 +111,7 @@ export default function Tribunal() {
   const [selectedCaseId, setSelectedCaseId] = useState<number | null>(null)
   const [activeModel, setActiveModel] = useState<'logistic' | 'boosting'>('logistic')
   const [threshold, setThreshold] = useState(0.5)
-  const [perturbation, setPerturbation] = useState<{ feature: string; value: number | string } | null>(null)
+  const [edits, setEdits] = useState<Edits>({})
   const [flipResult, setFlipResult] = useState<CounterfactualResult | null>(null)
   const [flipTarget, setFlipTarget] = useState<string>('')
   const [comparisonCaseId, setComparisonCaseId] = useState<number | null>(null)
@@ -132,15 +135,20 @@ export default function Tribunal() {
     return fixtures.fixture.rows.find((r) => r.id === effectiveSelectedCaseId) ?? null
   })()
 
+  // Derived, not reconciled in an effect: if chapter 1 switches to the case chapter 6 was
+  // comparing against, the comparison is simply void (it would compare a case with itself
+  // while the select, which excludes the selected case, showed its placeholder).
+  const effectiveComparisonId = comparisonCaseId === effectiveSelectedCaseId ? null : comparisonCaseId
   const comparisonRow = (() => {
-    if (fixtures.status !== 'ready' || comparisonCaseId === null) return null
-    return fixtures.fixture.rows.find((r) => r.id === comparisonCaseId) ?? null
+    if (fixtures.status !== 'ready' || effectiveComparisonId === null) return null
+    return fixtures.fixture.rows.find((r) => r.id === effectiveComparisonId) ?? null
   })()
+  const hasEdits = Object.keys(edits).length > 0
 
   const effectiveRaw: RawCase | null = (() => {
     if (!caseRow) return null
-    if (!perturbation || activeModel !== 'logistic') return caseRow.raw
-    return { ...caseRow.raw, [perturbation.feature]: perturbation.value }
+    if (!hasEdits || activeModel !== 'logistic') return caseRow.raw
+    return { ...caseRow.raw, ...edits }
   })()
 
   // SYN-INT-002 cross-control rule (INTERACTIONS.yaml): a perturbation is only ever
@@ -152,7 +160,7 @@ export default function Tribunal() {
     if (activeModel === 'boosting') {
       return { proba: caseRow.boosting_proba, attribution: null as Record<string, number> | null }
     }
-    if (!perturbation || !effectiveRaw) {
+    if (!hasEdits || !effectiveRaw) {
       return { proba: caseRow.logistic_proba, attribution: caseRow.logistic_attribution_by_feature }
     }
     const proba = logisticProba(fixtures.manifest, effectiveRaw)
@@ -187,24 +195,37 @@ export default function Tribunal() {
   const actionableFeatures = [...manifest.actionable_numeric, ...manifest.actionable_categorical]
   const confusionRow = thresholdSweep[activeModel].find((r) => Math.abs(r.threshold - threshold) < 1e-6)
   const activeCalibration = calibration[activeModel]
+  // The band holding the live (possibly edited) probability; the top band includes 1.0.
+  const caseBinIndex = activeCalibration.findIndex(
+    (b, i) => liveResult.proba >= b.bin_lo && (liveResult.proba < b.bin_hi || i === activeCalibration.length - 1),
+  )
+
+  function setEdit(feature: string, value: number | string) {
+    // Moving a control back to the case's own value un-edits that feature.
+    setEdits((prev) => {
+      const next = { ...prev }
+      if (value === caseRow!.raw[feature]) delete next[feature]
+      else next[feature] = value
+      return next
+    })
+  }
 
   function handlePerturb(feature: string, rawValue: string) {
-    if (manifest.actionable_numeric.includes(feature)) {
-      setPerturbation({ feature, value: clampToBounds(manifest, feature, Number(rawValue)) })
-    } else {
-      setPerturbation({ feature, value: rawValue })
-    }
+    setEdit(
+      feature,
+      manifest.actionable_numeric.includes(feature) ? clampToBounds(manifest, feature, Number(rawValue)) : rawValue,
+    )
     setFlipResult(null)
   }
 
   function handleReset() {
-    setPerturbation(null)
+    setEdits({})
     setFlipResult(null)
   }
 
   function handleSwitchModel(model: 'logistic' | 'boosting') {
     setActiveModel(model)
-    setPerturbation(null)
+    setEdits({})
     setFlipResult(null)
   }
 
@@ -228,7 +249,7 @@ export default function Tribunal() {
 
   function handleApplyFlip() {
     if (flipResult?.feasible) {
-      setPerturbation({ feature: flipResult.feature, value: flipResult.to_value })
+      setEdit(flipResult.feature, flipResult.to_value)
       setFlipResult(null)
     }
   }
@@ -252,7 +273,9 @@ export default function Tribunal() {
         </WebGLErrorBoundary>
       )}
       {!introDone && <IntroSequence onComplete={handleIntroComplete} />}
-      <ChapterNav />
+      {/* Inert while the intro covers the page: otherwise Tab walks into links and selects
+          hidden behind the opaque overlay. */}
+      <ChapterNav inert={!introDone} />
       {/* Tablet/mobile only (hidden >=1300px by CSS): once chapter 1's verdict has
           scrolled away, a compact strip keeps the live verdict visible while the user
           edits features in chapter 3 or moves the threshold in chapter 4 -- on a narrow
@@ -272,10 +295,10 @@ export default function Tribunal() {
         <span className="verdict-strip-proba">{formatProbability(liveResult.proba)}</span>
         <span className="verdict-strip-meta">
           {activeModel === 'logistic' ? 'logistic' : 'boosting'}
-          {perturbation && activeModel === 'logistic' ? ' · edited' : ''}
+          {hasEdits && activeModel === 'logistic' ? ' · edited' : ''}
         </span>
       </div>
-      <main className="tribunal-scene" ref={sceneRef} data-testid="tribunal-scene">
+      <main className="tribunal-scene" ref={sceneRef} data-testid="tribunal-scene" inert={!introDone}>
         <header className="dossier-header">
           <p className="dossier-case-number">CASE No. {String(caseRow.id).padStart(5, '0')}</p>
           <h1>Synapse Tribunal</h1>
@@ -295,7 +318,7 @@ export default function Tribunal() {
             value={effectiveSelectedCaseId ?? ''}
             onChange={(e) => {
               setSelectedCaseId(Number(e.target.value))
-              setPerturbation(null)
+              setEdits({})
               setFlipResult(null)
             }}
           >
@@ -319,7 +342,7 @@ export default function Tribunal() {
               </button>
             ))}
           </div>
-          {activeModel === 'boosting' && perturbation === null && (
+          {activeModel === 'boosting' && (
             <p className="model-switch-note">
               No live evaluator exists for this model (see chapter 3); shown here is its real
               precomputed probability for this case, never a perturbed or fabricated one.
@@ -331,7 +354,7 @@ export default function Tribunal() {
           </p>
           <p className="verdict-probability">
             Probability of exceeding $50K: <strong>{formatProbability(liveResult.proba)}</strong>
-            {perturbation && activeModel === 'logistic' && (
+            {hasEdits && activeModel === 'logistic' && (
               <span className="recomputed-note"> (recomputed live after your edit)</span>
             )}
           </p>
@@ -398,8 +421,7 @@ export default function Tribunal() {
           <RawReader
             manifest={manifest}
             caseRow={caseRow}
-            perturbedFeature={perturbation?.feature ?? null}
-            perturbedValue={perturbation?.value ?? null}
+            edits={activeModel === 'logistic' ? edits : {}}
           />
 
           {activeModel === 'boosting' ? (
@@ -412,8 +434,7 @@ export default function Tribunal() {
               <div className="perturb-controls">
                 {actionableFeatures.map((feature) => {
                   const isNumeric = manifest.actionable_numeric.includes(feature)
-                  const currentValue =
-                    perturbation?.feature === feature ? perturbation.value : caseRow.raw[feature]
+                  const currentValue = feature in edits ? edits[feature] : caseRow.raw[feature]
                   if (isNumeric) {
                     const [lo, hi] = manifest.numeric_observed_bounds[feature]
                     return (
@@ -493,7 +514,7 @@ export default function Tribunal() {
                 </p>
               )}
 
-              <button type="button" className="reset-button" onClick={handleReset} disabled={!perturbation}>
+              <button type="button" className="reset-button" onClick={handleReset} disabled={!hasEdits}>
                 Reset scenario
               </button>
             </>
@@ -573,6 +594,13 @@ export default function Tribunal() {
           aria-labelledby="chapter-5-heading"
         >
           <h2 id="chapter-5-heading">Chapter 5: Calibration</h2>
+          {calibrationBinIndex === null && (
+            <p className="calibration-prompt">
+              Is "{formatProbability(liveResult.proba)}" worth believing? Each band below groups the
+              held-out test cases this model scored in that range. Case {caseRow.id} falls in the
+              marked band; choose any band to see how often its predictions came true.
+            </p>
+          )}
           <ul className="calibration-bins" role="list">
             {activeCalibration.map((bin, i) => (
               <li key={i}>
@@ -583,6 +611,7 @@ export default function Tribunal() {
                   aria-pressed={i === calibrationBinIndex}
                 >
                   {(bin.bin_lo * 100).toFixed(0)}–{(bin.bin_hi * 100).toFixed(0)}%
+                  {i === caseBinIndex && <span className="calibration-bin-mark"> · this case</span>}
                 </button>
               </li>
             ))}
@@ -612,7 +641,7 @@ export default function Tribunal() {
           <label htmlFor="comparison-select">Compare case {caseRow.id} against</label>
           <select
             id="comparison-select"
-            value={comparisonCaseId ?? ''}
+            value={effectiveComparisonId ?? ''}
             onChange={(e) => setComparisonCaseId(e.target.value ? Number(e.target.value) : null)}
           >
             <option value="">Select a case to compare</option>

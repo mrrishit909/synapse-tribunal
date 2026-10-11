@@ -8,8 +8,8 @@ check `git log --oneline | head` and run `npm run release:check`; those are the 
 portfolio integration) has NOT been done and needs separate explicit authorization from the user
 (`specifications/SPEC_LOCK.md` section 3). Do not push or deploy without it.
 
-**Last full verification:** `npm run release:check` PASS on every criterion: 156/156 Playwright
-(52 tests x Chromium/Firefox/WebKit, including axe-core), 25/25 vitest, 69/69 pytest, clean
+**Last full verification:** `npm run release:check` PASS on every criterion: 174/174 Playwright
+(58 tests x Chromium/Firefox/WebKit, including axe-core), 25/25 vitest, 69/69 pytest, clean
 tsc/oxlint/build, required docs present, ledger has nothing `unstarted`/`blocked`, three's renderer
 bundled only in the WebGLStage chunk.
 

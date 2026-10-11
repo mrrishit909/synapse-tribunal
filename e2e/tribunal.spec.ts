@@ -210,6 +210,52 @@ test("selecting a calibration bin (SYN-INT-005) shows a real cohort", async ({ p
   await expect(page.locator(".calibration-detail")).toBeVisible();
 });
 
+test.describe("cross-control reconciliation (live-site verification findings)", () => {
+  test("chapter 6 never compares a case with itself when chapter 1 switches to the compared case", async ({ page }) => {
+    await gotoAndSkipIntro(page);
+    const compare = page.getByLabel(/compare case .* against/i);
+    const target = await compare.locator("option").nth(1).getAttribute("value");
+    await compare.selectOption(target!);
+    await expect(page.locator(".comparison-grid .attribution-bars")).toHaveCount(2);
+
+    await page.locator("#case-select").selectOption(target!);
+    await expect(page.locator(".comparison-grid")).toHaveCount(0);
+    await expect(compare).toHaveValue("");
+  });
+
+  test("chapter 3 edits combine: editing a second feature keeps the first edit", async ({ page }) => {
+    await gotoAndSkipIntro(page);
+    const proba = page.locator(".verdict-probability strong");
+    const base = await proba.textContent();
+    await page.locator("#perturb-capital-gain").fill("5000");
+    const afterOne = await proba.textContent();
+    await page.locator("#perturb-hours-per-week").fill("60");
+    await expect(page.locator("#perturb-capital-gain")).toHaveValue("5000");
+    await expect(page.locator(".perturbed-stamp")).toHaveCount(2);
+    await expect(proba).not.toHaveText(afterOne!);
+    await page.getByRole("button", { name: /reset scenario/i }).click();
+    await expect(proba).toHaveText(base!);
+    await expect(page.locator(".perturbed-stamp")).toHaveCount(0);
+  });
+
+  test("chapter 5 starts with guidance and marks the band holding this case's probability", async ({ page }) => {
+    await gotoAndSkipIntro(page);
+    await expect(page.locator(".calibration-prompt")).toBeVisible();
+    const marked = page.locator(".calibration-bin:has(.calibration-bin-mark)");
+    await expect(marked).toHaveCount(1);
+    // Case 35 (the default) is 73.8%: the 70-80% band.
+    await expect(marked).toContainText("70–80%");
+  });
+
+  test("content behind the intro is inert until the intro hands off", async ({ page }) => {
+    await page.goto("./");
+    await page.getByRole("button", { name: /skip intro/i }).waitFor({ state: "visible" });
+    await expect(page.getByTestId("tribunal-scene")).toHaveAttribute("inert", "");
+    await page.getByRole("button", { name: /skip intro/i }).click();
+    await expect(page.getByTestId("tribunal-scene")).not.toHaveAttribute("inert", "");
+  });
+});
+
 test("comparing two cases (SYN-INT-006) shows two real attribution panels", async ({ page }) => {
   await gotoAndSkipIntro(page);
 
@@ -295,6 +341,34 @@ test.describe("responsive viewports", () => {
 });
 
 test.describe("responsive compositions", () => {
+  test("mobile verdict strip names the model and fits at 360px", async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 740 });
+    await gotoAndSkipIntro(page);
+    await page.getByRole("button", { name: /gradient-boosted trees/i }).click();
+    await page.locator("#chapter-3").evaluate((el) => el.scrollIntoView({ block: "start" }));
+    const meta = page.locator(".verdict-strip-meta");
+    await expect(meta).toBeVisible();
+    await expect(meta).toContainText(/boost/i);
+    // Item bounds, not scrollWidth: a centred flex row overflows to the left invisibly to
+    // scrollWidth, and items wrapping inside themselves (a measured earlier state) pass it too.
+    const m = await page.getByTestId("verdict-strip").evaluate((el) => {
+      const r = [...el.children].filter((c) => (c as HTMLElement).offsetParent).map((c) => c.getBoundingClientRect());
+      return { left: Math.min(...r.map((x) => x.left)), right: Math.max(...r.map((x) => x.right)), lines: Math.max(...r.map((x) => Math.round(x.height))) };
+    });
+    expect(m.left).toBeGreaterThanOrEqual(0);
+    expect(m.right).toBeLessThanOrEqual(360);
+    expect(m.lines).toBeLessThan(20); // one line of 0.72rem text, not two
+  });
+
+  test("nav links' visible text matches their accessible name (WCAG 2.5.3)", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await gotoAndSkipIntro(page);
+    for (const a of await page.locator(".chapter-nav a").all()) {
+      const visible = (await a.innerText()).replace(/\s+/g, " ").trim();
+      expect(await a.getAttribute("aria-label")).toBe(visible);
+    }
+  });
+
   // Measured nav geometry, not just "no horizontal overflow": the old layout passed every
   // overflow check while its fixed chapter rail sat ON TOP of the content column (up to
   // 129px of overlap) anywhere between ~900px and 1280px wide -- none of the earlier test
