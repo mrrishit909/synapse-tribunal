@@ -7,9 +7,17 @@ Project 03 of the Creative Engineering Atlas. See `specifications/SPEC_LOCK.md` 
 authoritative spec decisions, `specifications/REQUIREMENTS.yaml` for current build status, and
 `docs/LIMITATIONS.md` for what this build does and does not do right now.
 
-**Current state:** one feature slice built and independently reviewed (SYN-INT-001 select case,
-SYN-INT-004 perturb + single-feature counterfactual search). The remaining four interactions,
-six narrative chapters, and cinematic intro are not yet built.
+**Current state:** all 6 required interactions, all 6 narrative chapters, the cinematic intro,
+and a persistent WebGL background renderer (React Three Fiber, driven by the same live
+analytical state the 2D UI shows) are built and tested across Chromium/Firefox/WebKit, including
+an axe-core accessibility sweep. Independently reviewed twice: once on the vertical slice
+(SYN-INT-001/004, 0 P0/3 P1, all fixed) and once as a full-integration review of the complete
+build (0 P0/2 P1, both fixed with regression tests proven to fail against the defective code
+first). See `specifications/REQUIREMENTS.yaml` for the current per-requirement status and
+`verification/SYNAPSE_TRIBUNAL_FINAL_ACCEPTANCE_REPORT.md` (once written) for the full record.
+Not yet done: the public deployment stage (Stage B, requires separate authorization per
+`SPEC_LOCK.md` section 3) and a deliberately distinct mobile/tablet composition (currently a
+reflow of the desktop layout -- disclosed in `docs/LIMITATIONS.md`, not hidden).
 
 ## Run it
 
@@ -34,9 +42,16 @@ export SSL_CERT_FILE=$(.venv/bin/python -c "import certifi; print(certifi.where(
 .venv/bin/python -I -m pytest tests/unit -q            # reference-engine test suite
 ```
 
+```bash
+npx playwright install chromium firefox webkit   # if not already installed
+npx playwright test                               # runs all e2e + axe-core tests, 3 browsers
+```
+
 ## Stack
 
-React + TypeScript + Vite, GSAP for motion, scikit-learn for the offline reference models, a
-manifest-driven TypeScript port of the logistic model for live in-browser recomputation
-(`src/engine/`), Playwright + Vitest + pytest for testing. See `docs/ARCHITECTURE.md` once it
-exists (not yet written at this stage of the build).
+React + TypeScript + Vite, GSAP + ScrollTrigger for 2D motion, React Three Fiber/Three.js for
+the persistent WebGL background (lazy-loaded, never fetched on mobile viewports or when WebGL
+is unavailable), scikit-learn for the offline reference models, a manifest-driven TypeScript
+port of the logistic model for live in-browser recomputation (`src/engine/`), Playwright
+(Chromium/Firefox/WebKit) + axe-core + Vitest + pytest for testing. See `docs/ARCHITECTURE.md`
+for the full system design.
