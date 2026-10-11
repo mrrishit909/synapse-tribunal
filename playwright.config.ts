@@ -26,7 +26,12 @@ export default defineConfig({
   // supportsWebGL() feature-detection and fallback rather than assumed consistent).
   projects: [
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
-    { name: "firefox", use: { ...devices["Desktop Firefox"] } },
+    // Headless Firefox on Linux (CI) disables WebGL without a GPU, which made every WebGL-stage
+    // test see the 2D fallback; force-enabled uses Mesa's software renderer, like WebKit already does.
+    {
+      name: "firefox",
+      use: { ...devices["Desktop Firefox"], launchOptions: { firefoxUserPrefs: { "webgl.force-enabled": true } } },
+    },
     { name: "webkit", use: { ...devices["Desktop Safari"] } },
   ],
 });

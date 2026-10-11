@@ -58,9 +58,10 @@ jobs:
           key: openml-adult-v2
       - run: python -I research/ingest/fetch_adult.py
       - run: python -I research/models/train.py
-      # Parity: the fixtures the site ships must be exactly what the training script produces.
+      # Parity: the fixtures the site ships must be what the training script produces (every
+      # number within 1e-4; Linux and macOS BLAS land ~1e-7 apart, so not byte-for-byte).
       - name: Committed fixtures reproduce from source
-        run: git diff --exit-code -- public/data
+        run: python -I scripts/compare_fixtures.py public/data/precomputed/*.json
       - run: python -I -m pytest tests/unit -q
 
   e2e:
