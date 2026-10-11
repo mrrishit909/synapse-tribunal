@@ -1,8 +1,12 @@
+/* Three deliberate compositions, not one layout reflowing:
+   - >=1300px  wide desktop: fixed side rail in the right margin.
+   - 768-1299px tablet/laptop: sticky top tab bar.
+   - <768px    mobile: fixed bottom tab bar, numbers only, 44px tap targets.
+   The rail only exists where the margin can actually hold it: a measured bug had the
+   rail (about 180px incl. its offset) overlapping the 920px content column by up to
+   129px anywhere between ~900px and 1280px viewport width. */
+
 .chapter-nav {
-  position: fixed;
-  top: 50%;
-  right: 20px;
-  transform: translateY(-50%);
   z-index: 10;
   font-family: 'Courier New', 'IBM Plex Mono', ui-monospace, monospace;
   font-size: 0.7rem;
@@ -12,10 +16,6 @@
   margin: 0;
   padding: 0;
   display: flex;
-  flex-direction: column;
-  gap: 10px;
-  border-left: 1px solid #2a2b31;
-  padding-left: 12px;
 }
 .chapter-nav a {
   color: #c9c6bd;
@@ -32,30 +32,102 @@
   outline: 2px solid #df514b;
   outline-offset: 2px;
 }
+.nav-num {
+  margin-right: 6px;
+}
+.nav-short {
+  display: none;
+}
 
-@media (max-width: 900px) {
+/* --- Wide desktop: side rail --- */
+@media (min-width: 1300px) {
   .chapter-nav {
-    position: static;
-    transform: none;
-    display: flex;
-    justify-content: center;
-    padding: 12px 0;
-    background: #101116;
+    position: fixed;
+    top: 50%;
+    right: 20px;
+    transform: translateY(-50%);
+  }
+  .chapter-nav ul {
+    flex-direction: column;
+    border-left: 1px solid #2a2b31;
+    padding-left: 12px;
+  }
+  /* 24px-tall hit areas (WCAG 2.5.8 target size): the visible text stays small, but
+     each link was measured at 12px tall on a 22px pitch before this. */
+  .chapter-nav a {
+    display: block;
+    line-height: 24px;
+  }
+}
+
+/* --- Tablet / laptop: sticky top tab bar --- */
+@media (min-width: 768px) and (max-width: 1299px) {
+  .chapter-nav {
+    position: sticky;
+    top: 0;
+    background: rgba(16, 17, 22, 0.96);
+    backdrop-filter: blur(6px);
     border-bottom: 1px solid #2a2b31;
   }
   .chapter-nav ul {
-    flex-direction: row;
-    flex-wrap: wrap;
     justify-content: center;
-    border-left: none;
-    padding-left: 0;
-    gap: 8px;
+    gap: 2px;
   }
-  /* Lighthouse's target-size audit flagged these as too small/close on mobile
-     (chapter-3 and chapter-6 links specifically); padding brings the tap target to the
-     WCAG-recommended ~24px minimum without changing the visible text size. */
+  /* Exact 46px tabs + the nav's 1px border = 47px bar; .verdict-strip (Tribunal.css)
+     is positioned at top: 47px to sit flush beneath it. Change both together. */
   .chapter-nav a {
-    display: inline-block;
-    padding: 8px 6px;
+    display: inline-flex;
+    align-items: center;
+    box-sizing: border-box;
+    height: 46px;
+    padding: 0 10px;
+    border-bottom: 2px solid transparent;
+  }
+  .chapter-nav a[aria-current='true'] {
+    border-bottom-color: #df514b;
+  }
+  .nav-name {
+    display: none;
+  }
+  .nav-short {
+    display: inline;
+  }
+}
+
+/* --- Mobile: fixed bottom tab bar --- */
+@media (max-width: 767px) {
+  .chapter-nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(16, 17, 22, 0.97);
+    border-top: 1px solid #2a2b31;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+  .chapter-nav ul {
+    justify-content: space-around;
+  }
+  .chapter-nav li {
+    flex: 1;
+  }
+  .chapter-nav a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    min-width: 44px;
+    font-size: 0.85rem;
+    border-top: 2px solid transparent;
+  }
+  .chapter-nav a[aria-current='true'] {
+    border-top-color: #df514b;
+  }
+  .nav-num {
+    margin-right: 0;
+  }
+  .nav-name,
+  .nav-short {
+    display: none;
   }
 }

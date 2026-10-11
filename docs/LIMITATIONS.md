@@ -1,9 +1,8 @@
 # Limitations
 
-Honest, current-state record of what this build does not do, referenced from code comments
-(`src/engine/counterfactual.ts`) and specs (`specifications/INTERACTIONS.yaml`) rather than left
-as a dangling citation. Updated as the build progresses; this is not a final release document
-(see `verification/` once SYN-RELEASE-001 closes for that).
+Honest, current-state record of what this build does not do. Referenced from code comments
+(`src/engine/counterfactual.ts`) and specs (`specifications/INTERACTIONS.yaml`). The release
+record is `verification/SYNAPSE_TRIBUNAL_FINAL_ACCEPTANCE_REPORT.md`.
 
 ## Analytical
 
@@ -30,23 +29,37 @@ as a dangling citation. Updated as the build progresses; this is not a final rel
 - **1994 US Census data.** Income thresholds and occupational categories reflect that period's
   economy, not current ones.
 
-## Interface (current build: vertical slice only)
+## Interface
 
-- Only SYN-INT-001 (select case) and SYN-INT-004 (perturb + single-feature flip search) are
-  implemented. SYN-INT-002/003/005/006 do not exist yet.
-- Only one scene exists (the flagship "Tribunal" interaction); none of the six narrative
-  chapters or the cinematic intro are built yet.
-- **Mobile is a single-column reflow of the desktop layout**, not yet the deliberately distinct
-  touch-first composition the Atlas stack guidance calls for (bottom-sheet controls, reframed
-  camera/spatial treatment). Functional and legible, verified by real screenshot, but not yet a
-  separately art-directed mobile composition. Scoped to the full responsive-design pass.
-- No cross-browser testing yet (Chromium only via Playwright's default project).
+All 6 interactions, all 6 chapters, the cinematic intro, and the persistent WebGL stage are
+built and tested in Chromium, Firefox and WebKit. What remains limited:
+
+- **Mobile has no WebGL scene.** Below 768px the WebGL chunk is never fetched (an Atlas
+  requirement for this project, and a measured performance fix: mobile Lighthouse went from 60
+  to 96-97). Mobile gets a static gradient background instead of the evidence chamber.
+- **Mobile controls are larger, not re-architected.** The phone composition has its own nav (a
+  fixed bottom tab bar), a live verdict strip, and 44px minimum touch targets, but the
+  perturbation controls are still the same slider/select stack as tablet, not a bottom-sheet.
+  The Atlas stack guidance mentions bottom-sheet controls; that specific pattern is not built.
+- **The intro's beat labels pass through low contrast while fading.** Each beat fades 0 to 1
+  to 0; at full opacity the red label is 4.86:1 on the background (passes WCAG AA), but a
+  point-in-time audit taken mid-fade can catch it lower. Transitional, not steady state.
+- **Desktop Lighthouse varies run to run on this machine** (71/97/100 across three identical
+  runs, traced to CPU contention from unrelated processes). See `PERFORMANCE_BUDGETS.md`.
+- **The live verdict strip (tablet/mobile) is `aria-hidden`.** It duplicates the chapter 1
+  verdict badge, which is already a `role="status"` live region; screen-reader users get the
+  badge's announcement, not two.
+
+## Not deployed
+
+Stage B (public repository, GitHub Pages, portfolio integration) has not happened and needs
+separate explicit authorization (`specifications/SPEC_LOCK.md` section 3). The Vite `base` path
+for Pages is not set yet; see `docs/DEPLOYMENT.md`.
 
 ## Process
 
-- No automated `release:check` auditor or `execution/tasks.json` ledger exists yet (the V2
-  directive's full machine-readable controller). `specifications/REQUIREMENTS.yaml` is
-  maintained by hand; an independent review already caught one row (SYN-INT-001) that was
-  incorrectly marked `unstarted` despite being implemented, so treat this file's status as
-  indicative, not infallible, until the full suite closes and a release auditor exists to check
-  it mechanically.
+- `specifications/REQUIREMENTS.yaml`, `README.md`, `execution/RESUME.md`, and this file are
+  maintained by hand, and each has been caught stale at least once during this build. `npm run
+  release:check` mechanically checks that no requirement is left `unstarted`/`blocked` and that
+  the required docs exist, not that every sentence in them is current.
+- No `execution/tasks.json` machine-readable task ledger (the V2 directive's fuller controller).

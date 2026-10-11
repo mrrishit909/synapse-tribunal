@@ -462,8 +462,94 @@ input:focus-visible {
   }
 }
 
+/* --- Live verdict strip (tablet + mobile compositions only) ---
+   Lives outside .tribunal-scene, so it uses literal palette values, not the scoped vars.
+   position: fixed (never in document flow) so showing/hiding it can't shift layout. */
+.verdict-strip {
+  display: none;
+}
+@media (max-width: 1299px) {
+  .verdict-strip {
+    display: flex;
+    position: fixed;
+    left: 0;
+    right: 0;
+    z-index: 9;
+    align-items: baseline;
+    justify-content: center;
+    gap: 14px;
+    padding: 8px 14px;
+    background: rgba(16, 17, 22, 0.96);
+    border-bottom: 1px solid #df514b;
+    color: #f0eee9;
+    font-family: 'Courier New', 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: 0.8rem;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-6px);
+    transition: opacity 180ms ease-out, transform 180ms ease-out, visibility 180ms;
+  }
+  .verdict-strip[data-visible='true'] {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+  }
+  .verdict-strip-case,
+  .verdict-strip-meta {
+    color: #c9c6bd;
+  }
+  .verdict-strip-call {
+    color: #df514b;
+    font-weight: bold;
+    letter-spacing: 0.04em;
+  }
+  .verdict-strip-proba {
+    font-weight: bold;
+  }
+}
+/* Tablet: sits directly under the 47px sticky top tab bar (ChapterNav.css). */
+@media (min-width: 768px) and (max-width: 1299px) {
+  .verdict-strip {
+    top: 47px;
+  }
+}
+/* Mobile: top of the screen; the tab bar is at the bottom. */
+@media (max-width: 767px) {
+  .verdict-strip {
+    top: 0;
+    gap: 10px;
+    font-size: 0.72rem;
+  }
+  .verdict-strip-meta {
+    display: none;
+  }
+  /* Room for the fixed bottom tab bar (48px + safe area) so it never covers the end of
+     chapter 6. */
+  .tribunal-scene {
+    padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* --- Touch targets: 44px minimum on phones and any coarse pointer --- */
+@media (max-width: 767px), (pointer: coarse) {
+  .tribunal-scene select,
+  .tribunal-scene button {
+    min-height: 44px;
+  }
+  .calibration-bin {
+    min-width: 44px;
+  }
+  .tribunal-scene input[type='range'] {
+    height: 44px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .tribunal-scene * {
+    transition: none !important;
+  }
+  .verdict-strip {
     transition: none !important;
   }
 }

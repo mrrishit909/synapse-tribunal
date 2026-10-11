@@ -47,13 +47,28 @@ rendering at that moment). The panels now guarantee text contrast is never a fun
 scene content, while the gaps between panels (header, margins) remain the main place the
 persistent world is visible.
 
-## Responsive compositions (honest state)
+## Responsive compositions
 
-Desktop (1440x900) and tablet (768x1024) both render the full editorial layouts described above.
-**Mobile (390x844) is currently a single-column reflow**, not a deliberately distinct composition
--- the chapter nav wraps to a horizontal text row, controls stack vertically, but there is no
-mobile-specific spatial treatment (no bottom-sheet, no reframed camera). This is disclosed, not
-hidden, in `docs/LIMITATIONS.md`; it is real remaining work, not an oversight being glossed over.
+Three deliberate compositions, each with its own navigation model, not one layout reflowing:
+
+| Width | Navigation | Verdict while editing | Scene | Touch |
+|---|---|---|---|---|
+| >=1300px (desktop) | Fixed side rail in the right margin | Chapter 1 badge only; the wide layout keeps context close | Full WebGL evidence chamber | 24px rail targets |
+| 768-1299px (tablet/laptop) | Sticky top tab bar, short labels, active tab underlined | Live verdict strip pinned under the tab bar once chapter 1 scrolls away | Full WebGL | 46px tabs |
+| <768px (mobile) | Fixed bottom tab bar, chapter numbers only, thumb-reachable | Live verdict strip pinned to the top | No WebGL (never fetched), static gradient | 44px minimum on every control |
+
+Why the verdict strip exists: on a narrow screen the perturbation controls (chapter 3) and the
+threshold (chapter 4) are several screens below the verdict badge, so editing a feature used to
+mean scrolling back up to see what it did. The strip shows the same `liveResult.proba` the badge
+does, so the effect of an edit is visible where the edit happens.
+
+Why the rail starts at 1300px: the earlier layout put the fixed rail at every width above 900px.
+Measured, it overlapped the 920px content column by up to 129px anywhere from ~900px to 1280px
+(laptop widths no test viewport had covered). The rail now only appears where the margin can hold
+it, and `e2e/tribunal.spec.ts` checks rail/content overlap at nine widths from 360 to 1920.
+
+What mobile still lacks is listed in `docs/LIMITATIONS.md` (no WebGL scene; controls enlarged
+rather than moved into a bottom sheet).
 
 ## Reference inspiration, not imitation
 

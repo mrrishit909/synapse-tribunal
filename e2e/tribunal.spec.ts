@@ -241,10 +241,16 @@ test("reverse scroll: scrolling back above a chapter's start reverses its reveal
 });
 
 test.describe("responsive viewports", () => {
+  // ENGINEERING_STANDARDS.md p.84 minimum viewports (1440x900, 1920x1080, 768x1024,
+  // 390x844, a narrower 360px) plus 1024x768 laptop, which sits inside the range where a
+  // real nav-rail/content overlap bug lived (see the "responsive compositions" tests).
   const viewports = [
     { name: "desktop", width: 1440, height: 900 },
+    { name: "desktop-wide", width: 1920, height: 1080 },
+    { name: "laptop", width: 1024, height: 768 },
     { name: "tablet", width: 768, height: 1024 },
     { name: "mobile", width: 390, height: 844 },
+    { name: "mobile-narrow", width: 360, height: 740 },
   ];
   for (const vp of viewports) {
     test(`renders without horizontal overflow at ${vp.name}`, async ({ page }) => {
@@ -271,6 +277,91 @@ test.describe("responsive viewports", () => {
       expect(scrollWidth).toBeLessThanOrEqual(clientWidth + 1);
     });
   }
+});
+
+test.describe("responsive compositions", () => {
+  // Measured nav geometry, not just "no horizontal overflow": the old layout passed every
+  // overflow check while its fixed chapter rail sat ON TOP of the content column (up to
+  // 129px of overlap) anywhere between ~900px and 1280px wide -- none of the earlier test
+  // viewports landed in that range.
+  const all = [
+    [360, 740], [390, 844], [768, 1024], [1024, 768], [1280, 800], [1299, 800], [1300, 800], [1440, 900], [1920, 1080],
+  ] as const;
+  for (const [width, height] of all) {
+    test(`${width}x${height}: chapter nav never covers content, tap targets meet minimums`, async ({ page }) => {
+      await page.setViewportSize({ width, height });
+      await gotoAndSkipIntro(page);
+      await page.locator("#chapter-3").evaluate((el) => el.scrollIntoView({ block: "start" }));
+      const m = await page.evaluate(() => {
+        const nav = document.querySelector(".chapter-nav")!;
+        const nr = nav.getBoundingClientRect();
+        const scene = document.querySelector(".tribunal-scene")!.getBoundingClientRect();
+        const pos = getComputedStyle(nav).position;
+        const sideRail = pos === "fixed" && nr.top > 0 && nr.bottom < innerHeight;
+        const links = [...document.querySelectorAll(".chapter-nav a")].map((a) => a.getBoundingClientRect());
+        return {
+          sideRail,
+          railOverlapsContent: sideRail && nr.left < scene.right && nr.right > scene.left,
+          minW: Math.min(...links.map((b) => b.width)),
+          minH: Math.min(...links.map((b) => b.height)),
+        };
+      });
+      expect(m.railOverlapsContent).toBe(false);
+      // WCAG 2.5.8 (24px) everywhere; 44px on phones, where the nav is the primary way
+      // to move between chapters with a thumb.
+      const minTap = width < 768 ? 44 : 24;
+      expect(m.minW).toBeGreaterThanOrEqual(minTap);
+      expect(m.minH).toBeGreaterThanOrEqual(minTap);
+    });
+  }
+
+  test("mobile: bottom tab bar navigates chapters and never covers the last chapter", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await gotoAndSkipIntro(page);
+    const nav = page.locator(".chapter-nav");
+    const box = await nav.boundingBox();
+    expect(box!.y + box!.height).toBeGreaterThanOrEqual(843); // pinned to the bottom edge
+
+    await page.locator('.chapter-nav a[href="#chapter-3"]').click();
+    await expect(page.locator('.chapter-nav a[href="#chapter-3"]')).toHaveAttribute("aria-current", "true", {
+      timeout: 4000,
+    });
+
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    await expect(async () => {
+      const [c6Bottom, navTop] = await page.evaluate(() => [
+        document.querySelector("#chapter-6")!.getBoundingClientRect().bottom,
+        document.querySelector(".chapter-nav")!.getBoundingClientRect().top,
+      ]);
+      expect(c6Bottom).toBeLessThanOrEqual(navTop);
+    }).toPass({ timeout: 3000 });
+  });
+
+  for (const [label, width, height] of [["mobile", 390, 844], ["tablet", 768, 1024], ["laptop", 1024, 768]] as const) {
+    test(`${label}: live verdict strip appears past chapter 1 and tracks the real recomputed probability`, async ({ page }) => {
+      await page.setViewportSize({ width, height });
+      await gotoAndSkipIntro(page);
+      const strip = page.getByTestId("verdict-strip");
+      await expect(strip).toBeHidden(); // chapter 1's own verdict badge is on screen
+
+      const slider = page.getByLabel(/hours worked/i);
+      await slider.scrollIntoViewIfNeeded();
+      await slider.fill("5");
+      await expect(page.getByText(/recomputed live after your edit/i)).toBeVisible();
+      await expect(strip).toBeVisible();
+
+      // Same number as the badge -- the strip reads the same state, it doesn't re-derive it.
+      const badge = await page.locator(".verdict-probability strong").first().textContent();
+      await expect(page.locator(".verdict-strip-proba")).toHaveText(badge!);
+    });
+  }
+
+  test("desktop: no verdict strip (the side rail composition has room for the full layout)", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await gotoAndSkipIntro(page);
+    await page.locator("#chapter-4").evaluate((el) => el.scrollIntoView({ block: "start" }));
+    await expect(page.getByTestId("verdict-strip")).toBeHidden();
+  });
 });
 
 test.describe("WebGL stage", () => {

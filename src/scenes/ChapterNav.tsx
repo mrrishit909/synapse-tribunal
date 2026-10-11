@@ -1,29 +1,30 @@
 import { useEffect, useState } from 'react'
 import './ChapterNav.css'
 
+// `short` must be a case-insensitive substring of `name`: the tablet tab bar shows
+// `num + short` while each link's aria-label is `num + name`, and WCAG 2.5.3 (label in
+// name) requires the accessible name to contain the visible text.
 const CHAPTERS = [
-  { id: 'chapter-1', label: '01 Prediction' },
-  { id: 'chapter-2', label: '02 Training context' },
-  { id: 'chapter-3', label: '03 Feature attribution' },
-  { id: 'chapter-4', label: '04 Thresholding' },
-  { id: 'chapter-5', label: '05 Calibration' },
-  { id: 'chapter-6', label: '06 Verdict' },
+  { id: 'chapter-1', num: '01', name: 'Prediction', short: 'Prediction' },
+  { id: 'chapter-2', num: '02', name: 'Training context', short: 'Training' },
+  { id: 'chapter-3', num: '03', name: 'Feature attribution', short: 'Attribution' },
+  { id: 'chapter-4', num: '04', name: 'Thresholding', short: 'Threshold' },
+  { id: 'chapter-5', num: '05', name: 'Calibration', short: 'Calibration' },
+  { id: 'chapter-6', num: '06', name: 'Verdict', short: 'Verdict' },
 ]
 
 const ACTIVE_LINE_PX = 160 // distance from the top of the viewport that counts as "current"
 
-/** Fixed chapter rail. Native anchor links (`<a href="#chapter-N">`), keyboard-operable
- * by default; the browser's own hash-scroll honors `prefers-reduced-motion` via the
- * `scroll-behavior: auto` override in index.css, no custom scroll-animation JS needed.
+/** Chapter navigation, three deliberate compositions (see ChapterNav.css): a side rail
+ * on wide desktop, a sticky top tab bar on tablet/laptop, a fixed bottom tab bar on
+ * mobile. Native anchor links, keyboard-operable by default; the browser's own hash
+ * scroll honors `prefers-reduced-motion` via index.css, no custom scroll JS.
  *
  * Active-chapter tracking is a scroll listener, not IntersectionObserver: an earlier
- * version picked the intersecting entry with the smallest `boundingClientRect.top`,
- * which is wrong once a chapter scrolls mostly off-screen above the viewport -- its top
- * becomes a large NEGATIVE number, smaller than a chapter actually near the top edge,
- * so the nav stuck on the chapter the user had already scrolled past. Caught by an e2e
- * test that scrolled through all 6 chapters and asserted each became active in turn.
- * Classic scrollspy logic (last chapter whose top has crossed the active line) has no
- * such ambiguity. */
+ * version picked the intersecting entry with the smallest `boundingClientRect.top`, which
+ * is wrong once a chapter scrolls mostly off-screen above the viewport (its top becomes a
+ * large negative number). Classic scrollspy logic (last chapter whose top has crossed an
+ * active line) has no such ambiguity. */
 export default function ChapterNav() {
   const [activeId, setActiveId] = useState('chapter-1')
 
@@ -37,10 +38,8 @@ export default function ChapterNav() {
     const update = () => {
       ticking = false
       // At the bottom of the page there may not be enough scrollable distance left to
-      // bring the final chapter(s) up to the active line (nothing further down to
-      // scroll past), so a chapter near the end could never register as "current" by
-      // the line-crossing rule alone. Standard scrollspy fix: pin to the last chapter
-      // once the page is scrolled to its end.
+      // bring the final chapter(s) up to the active line, so pin to the last chapter
+      // once the page is scrolled to its end (standard scrollspy fix).
       const atBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2
       if (atBottom) {
         setActiveId(elements[elements.length - 1].id)
@@ -71,8 +70,14 @@ export default function ChapterNav() {
       <ul>
         {CHAPTERS.map((c) => (
           <li key={c.id}>
-            <a href={`#${c.id}`} aria-current={activeId === c.id ? 'true' : undefined}>
-              {c.label}
+            <a
+              href={`#${c.id}`}
+              aria-label={`${c.num} ${c.name}`}
+              aria-current={activeId === c.id ? 'true' : undefined}
+            >
+              <span className="nav-num">{c.num}</span>
+              <span className="nav-name">{c.name}</span>
+              <span className="nav-short">{c.short}</span>
             </a>
           </li>
         ))}

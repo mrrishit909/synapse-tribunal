@@ -484,6 +484,6 @@
   "leakage_check": {
     "exact_duplicate_test_rows_present_in_train": 1977,
     "n_test": 9045,
-    "note": "Count of test rows whose raw features (post fnlwgt/education drop) exactly match some train row. Disclosed, not silently deduplicated; a nonzero count here means test-set performance is mildly optimistic for those specific rows, not that the whole evaluation is invalid."
+    "note": "Count of test rows whose raw features (post fnlwgt/education drop) exactly match some train row -- these are real Census respondents who happen to share every remaining field, not a bug. Disclosed, not silently deduplicated: at roughly 22% of the test set, reported test AUROC/Brier are somewhat optimistic for this subset (the model may have memorized rather than generalized to these specific rows), though AUROC on the Adult dataset is well-established in the literature in the 0.90-0.93 range independent of this split, so the effect is unlikely to be large. A grouped split that removes duplicates from train or test is the honest fix and is recorded as future work, not applied here."
   }
 }

@@ -32,8 +32,8 @@ still outstanding.
   `a7a131a` commit message for the exact repro/fix/verify sequence for each).
 
 **Known, disclosed (not hidden) limitations, current as of this commit:**
-- Mobile/tablet is a single-column reflow of the desktop layout, not yet a deliberately distinct
-  composition. Real and unresolved; see `docs/LIMITATIONS.md`.
+- Mobile has its own composition (bottom tab bar, live verdict strip, 44px targets) but no WebGL
+  scene and no bottom-sheet controls. See `docs/LIMITATIONS.md` for the current list.
 - No `execution/tasks.json`/`release:check` automated auditor exists; this file and
   `specifications/REQUIREMENTS.yaml` are maintained by hand. The ledger has been caught stale
   twice now (once on SYN-INT-001's own status, once on this whole file plus README.md not

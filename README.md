@@ -13,11 +13,12 @@ analytical state the 2D UI shows) are built and tested across Chromium/Firefox/W
 an axe-core accessibility sweep. Independently reviewed twice: once on the vertical slice
 (SYN-INT-001/004, 0 P0/3 P1, all fixed) and once as a full-integration review of the complete
 build (0 P0/2 P1, both fixed with regression tests proven to fail against the defective code
-first). See `specifications/REQUIREMENTS.yaml` for the current per-requirement status and
-`verification/SYNAPSE_TRIBUNAL_FINAL_ACCEPTANCE_REPORT.md` (once written) for the full record.
-Not yet done: the public deployment stage (Stage B, requires separate authorization per
-`SPEC_LOCK.md` section 3) and a deliberately distinct mobile/tablet composition (currently a
-reflow of the desktop layout -- disclosed in `docs/LIMITATIONS.md`, not hidden).
+first). Desktop, tablet and mobile are three separate compositions (side rail / sticky top tabs
+plus a live verdict strip / bottom tab bar, no WebGL, 44px touch targets); see
+`docs/VISUAL_DESIGN.md`. Per-requirement status: `specifications/REQUIREMENTS.yaml`. Full
+release record: `verification/SYNAPSE_TRIBUNAL_FINAL_ACCEPTANCE_REPORT.md`. Not done: public
+deployment (Stage B, needs separate authorization per `SPEC_LOCK.md` section 3). Remaining
+limitations: `docs/LIMITATIONS.md`.
 
 ## Run it
 

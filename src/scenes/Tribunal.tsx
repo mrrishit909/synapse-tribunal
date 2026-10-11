@@ -11,6 +11,7 @@ import IntroSequence from './IntroSequence'
 import WebGLErrorBoundary from '../webgl/WebGLErrorBoundary'
 import { useIsMobileViewport } from '../webgl/useIsMobileViewport'
 import { useScrollProgress } from '../webgl/useScrollProgress'
+import { useScrolledPast } from './useScrolledPast'
 import '../webgl/WebGLStage.css'
 
 // Lazy-loaded so Three.js/@react-three/fiber (the bulk of the WebGL stack) are a
@@ -86,6 +87,7 @@ export default function Tribunal() {
   const reducedMotion = useReducedMotion()
   const scrollProgress = useScrollProgress()
   const isMobileViewport = useIsMobileViewport()
+  const pastVerdict = useScrolledPast('chapter-1')
   const sceneRef = useRef<HTMLElement>(null)
   const [introDone, setIntroDone] = useState(false)
   // Stable identity across every re-render (Tribunal re-renders on every scroll frame via
@@ -241,6 +243,28 @@ export default function Tribunal() {
       )}
       {!introDone && <IntroSequence onComplete={handleIntroComplete} />}
       <ChapterNav />
+      {/* Tablet/mobile only (hidden >=1300px by CSS): once chapter 1's verdict has
+          scrolled away, a compact strip keeps the live verdict visible while the user
+          edits features in chapter 3 or moves the threshold in chapter 4 -- on a narrow
+          screen those controls are several screens away from the verdict badge. Reads the
+          exact same liveResult/threshold as the badge. aria-hidden because it duplicates
+          the badge's own role="status" live region; announcing it twice would be noise. */}
+      <div
+        className="verdict-strip"
+        data-testid="verdict-strip"
+        data-visible={pastVerdict}
+        aria-hidden="true"
+      >
+        <span className="verdict-strip-case">CASE {String(caseRow.id).padStart(5, '0')}</span>
+        <span className="verdict-strip-call" data-predicted={predictedOver50k}>
+          {predictedOver50k ? 'EXCEEDS $50K' : 'AT/BELOW $50K'}
+        </span>
+        <span className="verdict-strip-proba">{formatProbability(liveResult.proba)}</span>
+        <span className="verdict-strip-meta">
+          {activeModel === 'logistic' ? 'logistic' : 'boosting'}
+          {perturbation && activeModel === 'logistic' ? ' · edited' : ''}
+        </span>
+      </div>
       <main className="tribunal-scene" ref={sceneRef} data-testid="tribunal-scene">
         <header className="dossier-header">
           <p className="dossier-case-number">CASE No. {String(caseRow.id).padStart(5, '0')}</p>
