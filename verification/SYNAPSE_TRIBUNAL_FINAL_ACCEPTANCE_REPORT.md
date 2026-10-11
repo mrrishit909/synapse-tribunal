@@ -1,6 +1,6 @@
 # Synapse Tribunal: Final Acceptance Report (Stage A, local)
 
-**Verified code commit:** `d4dfeac`. This report and the matching ledger/doc updates are in the
+**Verified code commit:** `6c82a86`. This report and the matching ledger/doc updates are in the
 commit that adds this version of the file; `npm run release:check` is run against that commit.
 **Date:** 2026-10-11
 **Verdict: ACCEPTED for Stage A (local release).** Stage B (public deployment) has not happened
@@ -150,6 +150,7 @@ Raw data: `verification/lighthouse-{desktop,mobile}.json`, `verification/FRAME_P
 | `96b0a4a` | Three compositions; rail overlap at 900-1280px; rail target size |
 | `ab6da96` | Intro contrast (clip-path wipe) |
 | `d4dfeac` | Review 3's P2s |
+| `6c82a86` | A regression `d4dfeac` itself introduced: the rail's new backing padding overlapped content by 2.2px at exactly 1300px. Caught by `release:check`'s 1300x800 overlap test in all 3 engines, not by review |
 
 ## 12. Known limitations
 
@@ -185,4 +186,5 @@ independently re-derived:
   compositions.
 - **G5 release evidence:** this report, the ledger, and `release:check`.
 
-No P0 or P1 remains open. The project is not described as deployed, because it is not.
+No P0 or P1 remains open. `d4dfeac` (the P2 fixes) was not independently reviewed; its one
+regression was caught by `release:check`, which passes at `6c82a86`. The project is not described as deployed, because it is not.

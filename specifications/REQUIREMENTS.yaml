@@ -120,7 +120,7 @@ gates:
       "scripts/release-check.mjs: PASS on every criterion, mutation-tested",
       "Remediation recheck (worktree-isolated reviewer, HEAD bc9b237): all four blockers
       from the 421dcc5 review resolved in all 3 engines, no new P0/P1; its P2s fixed in
-      d4dfeac", "verification/SYNAPSE_TRIBUNAL_FINAL_ACCEPTANCE_REPORT.md: ACCEPTED (Stage A)"]
+      d4dfeac (its one regression, a 2px rail overlap at 1300px, caught by release:check and fixed in 6c82a86)", "verification/SYNAPSE_TRIBUNAL_FINAL_ACCEPTANCE_REPORT.md: ACCEPTED (Stage A)"]
     note: "Stage B (public deploy) requires separate explicit authorization per
       SPEC_LOCK.md section 3 and is NOT covered by this row's independently_verified
       status -- only the local-build half (Pages base path not yet set, no deployment

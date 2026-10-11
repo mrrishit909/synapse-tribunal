@@ -26,7 +26,7 @@ bundled only in the WebGLStage chunk.
   768-1299px; bottom tab bar + strip, 44px targets, no WebGL <768px.
 - Three independent worktree-isolated reviews: vertical slice (0 P0, 3 P1), full integration
   (0 P0, 2 P1, NOT ACCEPTED at 421dcc5), remediation recheck at bc9b237 (all blockers resolved,
-  no new P0/P1, P2s then fixed in d4dfeac). Every P1 fix has a regression test confirmed to fail
+  no new P0/P1, P2s then fixed in d4dfeac; a 2px rail overlap that commit introduced at 1300px was caught by release:check and fixed in 6c82a86). Every P1 fix has a regression test confirmed to fail
   against the defective code.
 
 **Known limitations:** `docs/LIMITATIONS.md` is the current list.
