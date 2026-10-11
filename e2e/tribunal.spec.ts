@@ -552,6 +552,10 @@ test.describe("panel and control finish", () => {
         await el.scrollIntoViewIfNeeded();
         // Thumb at the far left, so the right part of the track is the unfilled track.
         await el.fill(min ?? (await el.getAttribute("min"))!);
+        // Wait out the chapter's scroll-reveal fade: mid-fade the whole track is dimmed.
+        await expect
+          .poll(() => el.evaluate((e) => Number(getComputedStyle(e.closest(".chapter")!).opacity)), { timeout: 4000 })
+          .toBe(1);
         const shot = (await el.screenshot()).toString("base64");
         const brightest = await page.evaluate(async (b64) => {
           const img = new Image();
