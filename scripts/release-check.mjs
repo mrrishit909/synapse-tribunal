@@ -96,7 +96,10 @@ try {
 
 // --- E2E across all 3 browsers, including axe-core ---
 try {
-  execSync('pkill -f "vite preview"', { stdio: "ignore" });
+  // Only whatever holds the suite's port: Playwright reuses an existing server there, and a
+  // stale one (or another project's) would be tested instead of this build. Other previews on
+  // the machine are left alone.
+  execSync("lsof -ti tcp:4173 | xargs kill", { stdio: "ignore" });
 } catch {
   /* no stray process, fine */
 }

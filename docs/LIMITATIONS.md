@@ -56,7 +56,7 @@ built and tested in Chromium, Firefox and WebKit. What remains limited:
 
 Stage B (public repository, GitHub Pages, portfolio integration) has not happened and needs
 separate explicit authorization (`specifications/SPEC_LOCK.md` section 3). The Vite `base` path
-for Pages is not set yet; see `docs/DEPLOYMENT.md`.
+(`/synapse-tribunal/`) and the Pages workflow are in place; see `docs/DEPLOYMENT.md`.
 
 ## Process
 

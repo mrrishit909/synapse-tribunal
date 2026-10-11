@@ -31,8 +31,8 @@ bundled only in the WebGLStage chunk.
 
 **Known limitations:** `docs/LIMITATIONS.md` is the current list.
 
-**If resuming to do Stage B (only with user authorization):** follow `docs/DEPLOYMENT.md` (set
-Vite `base`, rerun the suite against the base-pathed preview, create the repo, deploy via
+**If resuming to do Stage B (only with user authorization):** follow `docs/DEPLOYMENT.md` (Vite
+`base` is already `/synapse-tribunal/`; rerun the suite against the base-pathed preview, create the repo, deploy via
 Actions, verify the live URL with curl + a real screenshot + Playwright against the live site,
 then integrate into the portfolio site the same way the earlier Atlas projects were).
 

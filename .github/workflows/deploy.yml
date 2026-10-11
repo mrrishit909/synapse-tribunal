@@ -5,10 +5,10 @@ on:
     branches: [main]
   workflow_dispatch: {}
 
+# Only the deploy job gets Pages write and an OIDC token; the build job (which runs
+# third-party npm install scripts) is read-only.
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
   group: pages
@@ -19,6 +19,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           # Matches local development (Node 24); jsdom's undici needs a webidl API Node 20 lacks.
@@ -38,6 +40,9 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

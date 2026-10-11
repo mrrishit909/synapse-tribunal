@@ -387,7 +387,8 @@ test.describe("responsive compositions", () => {
   test("desktop: the side rail has an opaque backing (its text can't sit directly on the WebGL scene)", async ({ page }) => {
     // axe/Lighthouse can't see canvas pixels, so this can't be caught by an audit: an
     // independent review measured the active rail item at 3.4:1 over a red evidence plane.
-    // On the backing the accent is 4.86:1. Pin the backing itself.
+    // At 0.97 the accent stays >= 4.57:1 even over a pure white canvas (see ChapterNav.css).
+    // Pin the backing itself.
     await page.setViewportSize({ width: 1440, height: 900 });
     await gotoAndSkipIntro(page);
     const alpha = await page.locator(".chapter-nav ul").evaluate((el) => {
@@ -395,7 +396,7 @@ test.describe("responsive compositions", () => {
       const parts = m ? m[1].split(",").map(Number) : [];
       return parts.length === 4 ? parts[3] : parts.length === 3 ? 1 : 0;
     });
-    expect(alpha).toBeGreaterThanOrEqual(0.9);
+    expect(alpha).toBeGreaterThanOrEqual(0.97);
   });
 
   test("mobile: Skip intro meets the 44px touch-target minimum", async ({ page }) => {

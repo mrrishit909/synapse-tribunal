@@ -18,20 +18,28 @@ preview serves correctly, and every Playwright e2e test in this project runs aga
 production build (never a dev server) -- `npx playwright test` passing is itself a real
 build-correctness check.
 
-## Base path (not yet set)
+## Base path
 
-Unlike this portfolio's prior two projects, `vite.config.ts` does NOT currently set a `base`
-path for GitHub Pages -- because no target repository name has been decided (Stage B hasn't
-started). Before any real deployment: set `base: '/synapse-tribunal/'` (or whatever the actual
-repo name ends up being) in `vite.config.ts`, matching the pattern CASCADIA and The
-Counterfactual City both used, and re-verify `public/data/precomputed/*.json` fixture fetches
-still resolve correctly under that base path (`src/engine/useFixtures.ts` already builds its
-fetch URLs from `import.meta.env.BASE_URL`, so no other code should need to change -- this is the
-exact pattern that worked cleanly for both prior projects).
+`vite.config.ts` sets `base: '/synapse-tribunal/'`, matching the GitHub Pages project URL.
+`src/engine/useFixtures.ts` builds fixture URLs from `import.meta.env.BASE_URL`, so nothing else
+depends on the path. The e2e suite navigates relative to its `baseURL`
+(`http://localhost:4173/synapse-tribunal/` by default), so every local run already exercises the
+base path, and `LIVE_URL=<deployed url> npx playwright test` runs the same suite against a
+deployed copy (screenshots then go to `verification/LIVE_SCREENSHOTS/`).
+
+## CI
+
+`.github/workflows/deploy.yml` runs on every push to `main`: `npm ci`, typecheck, lint, Vitest,
+build, then publishes `dist/` with `actions/deploy-pages`. The repository's Pages source must be set to
+"GitHub Actions" once (Settings, Pages, Source; or `gh api -X POST repos/<owner>/<repo>/pages -f
+build_type=workflow`), or the first deploy job fails. Only the deploy job has `pages: write` and
+`id-token: write`; the build job, which runs npm install scripts, is read-only. It does not run Playwright or pytest;
+`npm run release:check` covers those and is run locally against the exact commit before it is
+pushed.
 
 ## Pre-deployment checklist (for whenever Stage B is authorized)
 
-- [ ] `base` in `vite.config.ts` set to match the real target path.
+- [x] `base` in `vite.config.ts` set to match the real target path.
 - [x] `npm run build` succeeds with no errors.
 - [x] `npm run preview` serves the build correctly: intro plays, all 6 controls produce real
       recomputed results, browser console shows no errors.

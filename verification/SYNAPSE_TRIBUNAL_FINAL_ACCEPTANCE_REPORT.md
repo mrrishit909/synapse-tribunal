@@ -177,7 +177,9 @@ The current list is `docs/LIMITATIONS.md`. In short:
 - `npm run release:check` checks, against the committed tree: tree clean, required docs present,
   ledger complete, typecheck, lint, vitest, pytest, build, the chunking invariant, and Playwright
   across 3 engines with axe-core.
-- **Not deployed.** The Vite `base` path for GitHub Pages is not set, and no repository exists.
+- **Not deployed at Stage A.** The Vite `base` path (`/synapse-tribunal/`) has been set since the
+  first commit; no repository existed. Stage B is recorded in
+  `verification/SYNAPSE_TRIBUNAL_PUBLICATION_REPORT.md`.
   `docs/DEPLOYMENT.md` lists the steps. Stage B needs the user's explicit authorization
   (`SPEC_LOCK.md` section 3).
 
