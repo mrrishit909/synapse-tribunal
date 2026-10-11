@@ -16,8 +16,10 @@ build (0 P0/2 P1, both fixed with regression tests proven to fail against the de
 first). Desktop, tablet and mobile are three separate compositions (side rail / sticky top tabs
 plus a live verdict strip / bottom tab bar, no WebGL, 44px touch targets); see
 `docs/VISUAL_DESIGN.md`. Per-requirement status: `specifications/REQUIREMENTS.yaml`. Full
-release record: `verification/SYNAPSE_TRIBUNAL_FINAL_ACCEPTANCE_REPORT.md`. Not done: public
-deployment (Stage B, needs separate authorization per `SPEC_LOCK.md` section 3). Remaining
+release record: `verification/SYNAPSE_TRIBUNAL_FINAL_ACCEPTANCE_REPORT.md`. Live at
+https://mrrishit909.github.io/synapse-tribunal/ (Stage B, authorized by the user 2026-10-11); publication record:
+`verification/SYNAPSE_TRIBUNAL_PUBLICATION_REPORT.md`. Case study:
+https://mrrishit909.github.io/projects/synapse-tribunal/. Remaining
 limitations: `docs/LIMITATIONS.md`.
 
 ## Run it

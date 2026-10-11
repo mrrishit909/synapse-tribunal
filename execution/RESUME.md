@@ -3,10 +3,12 @@
 This file has been caught stale three times during this build. Before trusting anything here,
 check `git log --oneline | head` and run `npm run release:check`; those are the ground truth.
 
-**State:** Stage A (local release) ACCEPTED. See
-`verification/SYNAPSE_TRIBUNAL_FINAL_ACCEPTANCE_REPORT.md`. Stage B (public repo, GitHub Pages,
-portfolio integration) has NOT been done and needs separate explicit authorization from the user
-(`specifications/SPEC_LOCK.md` section 3). Do not push or deploy without it.
+**State:** Stage A (local release) ACCEPTED
+(`verification/SYNAPSE_TRIBUNAL_FINAL_ACCEPTANCE_REPORT.md`). Stage B authorized by the user on
+2026-10-11 and done: public repo https://github.com/mrrishit909/synapse-tribunal, live site
+https://mrrishit909.github.io/synapse-tribunal/, case study https://mrrishit909.github.io/projects/synapse-tribunal/.
+Record: `verification/SYNAPSE_TRIBUNAL_PUBLICATION_REPORT.md`. Every push to `main` redeploys
+via `.github/workflows/deploy.yml`, so run `npm run release:check` before pushing.
 
 **Last full verification:** `npm run release:check` PASS on every criterion: 189/189 Playwright
 (63 tests x Chromium/Firefox/WebKit, including axe-core), 25/25 vitest, 69/69 pytest, clean
@@ -31,10 +33,9 @@ bundled only in the WebGLStage chunk.
 
 **Known limitations:** `docs/LIMITATIONS.md` is the current list.
 
-**If resuming to do Stage B (only with user authorization):** follow `docs/DEPLOYMENT.md` (Vite
-`base` is already `/synapse-tribunal/`; rerun the suite against the base-pathed preview, create the repo, deploy via
-Actions, verify the live URL with curl + a real screenshot + Playwright against the live site,
-then integrate into the portfolio site the same way the earlier Atlas projects were).
+**After any change:** `npm run release:check` (clean tree first), commit its regenerated
+screenshots, push, wait for the Pages run, confirm live assets match `dist/`, then
+`LIVE_URL=https://mrrishit909.github.io/synapse-tribunal/ npx playwright test` against the public site.
 
 **Commands:**
 ```

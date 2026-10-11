@@ -1,10 +1,13 @@
 # Deployment
 
-**Status: NOT deployed.** Stage B (public GitHub repo + Pages deployment + portfolio
-integration) requires separate explicit authorization per `specifications/SPEC_LOCK.md` section
-3, which has not been given in this project's history. This document records deployment
-readiness and the steps that WOULD be taken, following this portfolio's own established pattern
-(CASCADIA, The Counterfactual City) -- it is not a claim that deployment has happened.
+**Status: deployed** (Stage B, authorized by the user 2026-10-11).
+
+| | |
+|---|---|
+| Live site | https://mrrishit909.github.io/synapse-tribunal/ |
+| Repository | https://github.com/mrrishit909/synapse-tribunal (public) |
+| Case study | https://mrrishit909.github.io/projects/synapse-tribunal/ |
+| Record | `verification/SYNAPSE_TRIBUNAL_PUBLICATION_REPORT.md` |
 
 ## Production build
 
@@ -37,7 +40,7 @@ build_type=workflow`), or the first deploy job fails. Only the deploy job has `p
 `npm run release:check` covers those and is run locally against the exact commit before it is
 pushed.
 
-## Pre-deployment checklist (for whenever Stage B is authorized)
+## Pre-deployment checklist (all done for the Stage B release)
 
 - [x] `base` in `vite.config.ts` set to match the real target path.
 - [x] `npm run build` succeeds with no errors.
@@ -49,11 +52,11 @@ pushed.
 - [x] Independent, worktree-isolated adversarial review has run against this build and its
       findings are resolved (two rounds: vertical-slice review and full-integration review, both
       with 0 P0, both their P1s fixed and regression-tested).
-- [ ] After publishing: a real `curl` check against the live URL, and a real screenshot of the
+- [x] After publishing: a real `curl` check against the live URL, and a real screenshot of the
       live page actually loading -- this project's own standing rule (inherited from this
       portfolio's prior projects) is that a deployment is not verified until checked this way,
       not merely "the push succeeded."
-- [ ] Re-verify fixture fetches resolve under the real base path once set (the exact class of bug
+- [x] Re-verify fixture fetches resolve under the real base path once set (the exact class of bug
       the base-path change exposed in a prior project in this portfolio, caught via a live
       layout-shift probe -- re-run `npx playwright test` against the base-pathed preview before
       trusting it).

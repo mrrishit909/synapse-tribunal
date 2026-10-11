@@ -56,11 +56,12 @@ built and tested in Chromium, Firefox and WebKit. What remains limited:
   verdict badge, which is already a `role="status"` live region; screen-reader users get the
   badge's announcement, not two.
 
-## Not deployed
+## Deployment
 
-Stage B (public repository, GitHub Pages, portfolio integration) has not happened and needs
-separate explicit authorization (`specifications/SPEC_LOCK.md` section 3). The Vite `base` path
-(`/synapse-tribunal/`) and the Pages workflow are in place; see `docs/DEPLOYMENT.md`.
+Live on GitHub Pages since 2026-10-11 (`docs/DEPLOYMENT.md`). CI rebuilds, typechecks, lints
+and runs Vitest on every push to `main`, but not Playwright or pytest: the full gate
+(`npm run release:check`) is run locally before pushing, so a push that skips it would deploy
+without the browser suite.
 
 ## Process
 
