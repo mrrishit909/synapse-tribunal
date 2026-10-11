@@ -447,6 +447,7 @@ export default function Tribunal() {
                           max={hi}
                           step={1}
                           value={Number(currentValue)}
+                          style={{ '--fill': (Number(currentValue) - lo) / (hi - lo) } as React.CSSProperties}
                           onChange={(e) => handlePerturb(feature, e.target.value)}
                         />
                         <output>{formatValue(currentValue)}</output>
@@ -543,6 +544,7 @@ export default function Tribunal() {
               max={0.99}
               step={0.01}
               value={threshold}
+              style={{ '--fill': (threshold - 0.01) / 0.98 } as React.CSSProperties}
               onChange={(e) => handleThresholdChange(Number(e.target.value))}
             />
             <output>{threshold.toFixed(2)}</output>

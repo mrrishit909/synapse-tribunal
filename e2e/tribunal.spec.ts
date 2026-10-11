@@ -488,7 +488,7 @@ test.describe("responsive compositions", () => {
       const parts = m ? m[1].split(",").map(Number) : [];
       return parts.length === 4 ? parts[3] : parts.length === 3 ? 1 : 0;
     });
-    expect(alpha).toBeGreaterThanOrEqual(0.97);
+    expect(alpha).toBe(1);
   });
 
   test("mobile: Skip intro meets the 44px touch-target minimum", async ({ page }) => {
@@ -505,6 +505,77 @@ test.describe("responsive compositions", () => {
     await page.locator("#chapter-4").evaluate((el) => el.scrollIntoView({ block: "start" }));
     await expect(page.getByTestId("verdict-strip")).toBeHidden();
   });
+});
+
+// Polish pass (live review, 2026-10-11): the persistent WebGL world is meant to be seen AROUND the
+// case file, never through it, and the controls must be drawn on the dark palette in every engine.
+function alphaOf(css: string) {
+  const m = css.match(/rgba?\(([^)]+)\)/);
+  const parts = m ? m[1].split(/[\s,/]+/).filter(Boolean).map(Number) : [];
+  return parts.length === 4 ? parts[3] : parts.length === 3 ? 1 : 0;
+}
+
+test.describe("panel and control finish", () => {
+  for (const [width, height] of [[1440, 900], [1024, 768], [768, 1024], [390, 844]] as const) {
+    test(`${width}x${height}: every dossier panel and the chapter nav are fully opaque`, async ({ page }) => {
+      await page.setViewportSize({ width, height });
+      await gotoAndSkipIntro(page);
+      const panels = await page.locator(".dossier-panel").evaluateAll((els) => els.map((e) => getComputedStyle(e).backgroundColor));
+      expect(panels.length).toBeGreaterThan(0);
+      for (const bg of panels) expect(alphaOf(bg), bg).toBe(1);
+      // The nav paints its backing on the <nav> at tablet/phone and on its <ul> as a desktop side rail.
+      const navBg = await page.locator(".chapter-nav").evaluate((el) => {
+        const own = getComputedStyle(el).backgroundColor;
+        return own === "rgba(0, 0, 0, 0)" ? getComputedStyle(el.querySelector("ul")!).backgroundColor : own;
+      });
+      expect(alphaOf(navBg), navBg).toBe(1);
+    });
+  }
+
+  test("selects and buttons have square corners in every engine (WebKit rounds them by default)", async ({ page }) => {
+    await gotoAndSkipIntro(page);
+    const radii = await page
+      .locator(".tribunal-scene select, .tribunal-scene button")
+      .evaluateAll((els) => [...new Set(els.map((e) => getComputedStyle(e).borderTopLeftRadius))]);
+    expect(radii).toEqual(["0px"]);
+  });
+
+  for (const [width, height] of [[1440, 900], [390, 844]] as const) {
+    test(`${width}x${height}: slider tracks are drawn on the dark palette, not the native near-white`, async ({ page }) => {
+      await page.setViewportSize({ width, height });
+      await gotoAndSkipIntro(page);
+      const sliders = [
+        { el: page.getByLabel(/classify as "exceeds \$50k" when probability/i), min: "0.01" },
+        { el: page.getByLabel(/hours worked/i), min: null },
+      ];
+      for (const { el, min } of sliders) {
+        await el.scrollIntoViewIfNeeded();
+        // Thumb at the far left, so the right part of the track is the unfilled track.
+        await el.fill(min ?? (await el.getAttribute("min"))!);
+        const shot = (await el.screenshot()).toString("base64");
+        const brightest = await page.evaluate(async (b64) => {
+          const img = new Image();
+          img.src = `data:image/png;base64,${b64}`;
+          await img.decode();
+          const c = document.createElement("canvas");
+          c.width = img.width;
+          c.height = img.height;
+          const ctx = c.getContext("2d")!;
+          ctx.drawImage(img, 0, 0);
+          // Right 40% of the control, every row: the brightest pixel is the track (the
+          // background is the panel's near-black ink).
+          const x0 = Math.floor(img.width * 0.55);
+          const d = ctx.getImageData(x0, 0, Math.floor(img.width * 0.4), img.height).data;
+          let max = 0;
+          for (let i = 0; i < d.length; i += 4) max = Math.max(max, (d[i] + d[i + 1] + d[i + 2]) / 3);
+          return max;
+        }, shot);
+        // Native unfilled tracks measured ~200+ (near-white); the dark-palette track is #6b6c75 (~110).
+        expect(brightest).toBeLessThan(160);
+        expect(brightest).toBeGreaterThan(60); // the track is actually drawn, not invisible
+      }
+    });
+  }
 });
 
 test.describe("WebGL stage", () => {

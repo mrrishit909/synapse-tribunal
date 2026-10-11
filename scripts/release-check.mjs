@@ -99,7 +99,7 @@ try {
   // Only whatever holds the suite's port: Playwright reuses an existing server there, and a
   // stale one (or another project's) would be tested instead of this build. Other previews on
   // the machine are left alone.
-  execSync("lsof -ti tcp:4173 | xargs kill", { stdio: "ignore" });
+  execSync(`lsof -ti tcp:${process.env.PW_PORT ?? 4173} | xargs kill`, { stdio: "ignore" });
 } catch {
   /* no stray process, fine */
 }

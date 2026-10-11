@@ -74,11 +74,11 @@
      background and can push text contrast below 4.5:1 depending on what the WebGL scene
      happens to be showing at that moment -- the panel's "see the world behind it" effect
      cannot be allowed to make contrast a function of live, unpredictable scene content.
-     0.97 keeps a faint hint of the scene in the unoccupied corners of each panel while
-     guaranteeing text contrast stays effectively identical to a solid background; the
-     gaps BETWEEN panels (headers, margins) remain the main place the scene is visible. */
-  background: rgba(16, 17, 22, 0.97);
-  backdrop-filter: blur(4px);
+     A later live review still saw the scene's wireframe through 0.97 panels, so panels are
+     now fully opaque: the persistent world is visible AROUND the case file (the gaps between
+     panels, headers, margins), never through it. Tinted chapter variants below use opaque
+     pre-blended colours for the same reason. */
+  background: var(--ink);
   padding: 20px;
   margin-bottom: 20px;
 }
@@ -109,7 +109,8 @@
 .chapter--hero {
   border-width: 2px;
   border-color: var(--accent);
-  background: rgba(223, 81, 75, 0.04);
+  /* 4% case-file red over the ink, pre-blended so it stays opaque. */
+  background: #181418;
 }
 .chapter--editorial .editorial-grid {
   display: grid;
@@ -135,7 +136,8 @@
   background: #0a0a0d;
 }
 .chapter--comparative {
-  background: rgba(240, 238, 233, 0.015);
+  /* 1.5% paper over the ink, pre-blended so it stays opaque. */
+  background: #131419;
 }
 .closing-note {
   margin-top: 18px;
@@ -171,8 +173,61 @@ button {
   color: var(--paper);
   /* 3.6:1 against the page: control boundaries need 3:1 (WCAG 1.4.11). */
   border: 1px solid #6b6c75;
+  /* Square in every engine: WebKit gives appearance:none selects a 5px radius by default. */
+  border-radius: 0;
   padding: 8px 12px;
   cursor: pointer;
+}
+
+/* Range inputs drawn entirely on the palette. Native tracks were near-white in Chromium and
+   Firefox and almost invisible in WebKit. Unfilled track #6b6c75 is 3.6:1 on the ink and the
+   red fill 4.9:1 (WCAG 1.4.11 needs 3:1); the paper ring keeps the red thumb distinct from
+   the red fill (3.3:1). --fill (0..1) is set inline from the value, because WebKit/Chromium
+   have no progress pseudo-element; Firefox draws its own with ::-moz-range-progress. */
+.tribunal-scene input[type='range'] {
+  --thumb: 18px;
+  --track: 6px;
+  --track-off: #6b6c75;
+  --fill-at: calc(var(--thumb) / 2 + var(--fill, 0) * (100% - var(--thumb)));
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  width: 100%;
+  height: 24px;
+  margin: 0;
+  cursor: pointer;
+}
+.tribunal-scene input[type='range']::-webkit-slider-runnable-track {
+  height: var(--track);
+  border: 0;
+  background: linear-gradient(to right, var(--accent) var(--fill-at), var(--track-off) var(--fill-at));
+}
+.tribunal-scene input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  box-sizing: border-box;
+  width: var(--thumb);
+  height: var(--thumb);
+  margin-top: calc((var(--track) - var(--thumb)) / 2);
+  border: 2px solid var(--paper);
+  border-radius: 50%;
+  background: var(--accent);
+}
+.tribunal-scene input[type='range']::-moz-range-track {
+  height: var(--track);
+  border: 0;
+  background: var(--track-off);
+}
+.tribunal-scene input[type='range']::-moz-range-progress {
+  height: var(--track);
+  background: var(--accent);
+}
+.tribunal-scene input[type='range']::-moz-range-thumb {
+  box-sizing: border-box;
+  width: var(--thumb);
+  height: var(--thumb);
+  border: 2px solid var(--paper);
+  border-radius: 50%;
+  background: var(--accent);
 }
 /* appearance: none, because WebKit's native select ignores padding and min-height (it drew
    every select 23px tall, failing axe's 24px target size and the 44px phone minimum). The

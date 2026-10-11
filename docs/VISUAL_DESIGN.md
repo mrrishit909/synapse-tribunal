@@ -39,13 +39,18 @@ case file" register), Georgia/Times New Roman for body prose, system-ui for inte
 
 ## The WebGL layer as a visual element, not decoration
 
-The persistent evidence-core/attribution-plane scene (`src/webgl/Scene.tsx`) is visible through
-the semi-transparent chapter panels (`background: rgba(16, 17, 22, 0.97)` -- raised from an
-initial 0.88 after axe-core caught a real WCAG contrast failure: the scene's bright red glow
-could blend through and drop text contrast below 4.5:1 depending on what the scene happened to be
-rendering at that moment). The panels now guarantee text contrast is never a function of live
-scene content, while the gaps between panels (header, margins) remain the main place the
-persistent world is visible.
+The persistent evidence-core/attribution-plane scene (`src/webgl/Scene.tsx`) is visible around
+the case file, never through it: chapter panels, the side rail and the tablet tab bar are fully
+opaque `#101116` (chapter 1's red tint and chapter 6's paper tint are pre-blended opaque colours).
+They were semi-transparent (0.88, then 0.97/0.96 after axe-core caught the scene's red glow
+dropping text contrast below 4.5:1); a 2026-10-11 live review still saw wireframe lines through
+chapter 6's closing text, so the bleed was removed outright. Text contrast is never a function of
+live scene content, and the gaps between panels (header, margins, the space beside the column)
+are where the persistent world is seen.
+
+Controls are drawn on the same palette in every engine: range inputs have a custom #6b6c75 track
+(3.6:1 on the ink), a case-file red fill and a red thumb with a paper ring; selects and buttons
+are square-cornered (WebKit's default 5px radius is overridden).
 
 ## Responsive compositions
 

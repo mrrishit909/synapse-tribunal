@@ -88,15 +88,12 @@ The case study, cover (captured from the real app), motion tile and home-shelf r
 
 ## 6. Not fixed (P3 or disclosed)
 
-- **Slider tracks:** in Chromium and Firefox the unfilled part of each slider stays near-white
-  (listed in `docs/LIMITATIONS.md`).
-- **WebGL show-through:** the scene shows faintly through the 0.97-opaque panels. Text stays
-  above AA.
-- **Tablet tab bar:** at 768px it is 0.96 opaque, so the page subtitle shows faintly through it.
-- **Select corners:** WebKit rounds them slightly.
+Fixed after publication (2026-10-11 maintenance pass, regression tests in `e2e/tribunal.spec.ts`
+"panel and control finish"): near-white slider tracks, WebGL show-through on the 0.97 panels,
+the 0.96 tablet tab bar, WebKit's rounded select corners; and, in the portfolio repo, the
+1.95:1 case-study footer (now 4.65:1, enforced by its `build.py`). Remaining:
+
 - **CI coverage:** CI does not run Playwright or pytest. The full gate is a local step before
   each push (`docs/LIMITATIONS.md`).
-- **Portfolio footer contrast:** the shared case-study footer is 1.95:1 and fails axe on every
-  case study. This comes from the portfolio template, not this project, and was left untouched.
 - **Commit author:** commits use a local-hostname email, the same as the already-public
   CASCADIA repo.

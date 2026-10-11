@@ -6,7 +6,7 @@
 |---|---|---|
 | Python reference engine | `.venv/bin/python -I -m pytest tests/unit -q` | 69 |
 | TypeScript engine + components | `npx vitest run` | 25 |
-| Browser (3 engines: Chromium/Firefox/WebKit) | `npx playwright test` | 189 (63 tests x 3 browsers) |
+| Browser (3 engines: Chromium/Firefox/WebKit) | `npx playwright test` | 210 (70 tests x 3 browsers) |
 | Typecheck | `npx tsc -b` | -- |
 | Lint | `npx oxlint` | -- |
 | Everything above, plus docs/ledger/chunking checks | `npm run release:check` | -- |
@@ -36,6 +36,14 @@ silently break it).
   verdict strip shows exactly the chapter-1 badge's recomputed probability, and the rail has an
   opaque backing (its contrast over the WebGL canvas can't be audited by axe). Top-tab clicks at 768
   and 1024px activate the clicked chapter under the sticky bar and strip.
+- Panel and control finish (maintenance pass, 2026-10-11), each confirmed to fail on the old CSS
+  first: every dossier panel and the chapter nav compute to alpha 1 at 1440/1024/768/390 (they
+  were 0.97/0.96, and the chapter 1/6 variants 0.04/0.015, so the scene showed through); selects
+  and buttons compute `border-radius: 0` in every engine (WebKit gave selects 5px); and a pixel
+  check on a screenshot of each slider at its minimum finds the unfilled track on the dark
+  palette (native tracks measured 239 brightness in Chromium, 211-234 in Firefox, and a
+  near-invisible 52 in WebKit; now ~110, the #6b6c75 track). Computed styles of
+  `::-webkit-slider-runnable-track`/`::-moz-range-track` aren't readable from script, hence pixels.
 - Cross-control reconciliation, added after the independent live-site verification found the
   gaps: chapter 6 never compares a case with itself after chapter 1 switches to it; chapter 3
   edits combine (a second edit keeps the first) and Reset clears them all; chapter 5 opens with
@@ -77,7 +85,8 @@ Playwright's `webServer.reuseExistingServer: true` will happily connect to ANY p
 listening on the configured port -- including an unrelated project's own `vite preview` server.
 This produced a genuinely confusing set of test failures (unrelated page content, a crash)
 traced only after checking `pgrep -fl "vite preview"` and finding a different project's server
-squatting on port 4173. Kill stray preview processes before running this suite locally.
+squatting on port 4173. Kill stray preview processes before running this suite locally, or move
+the suite to a free port: `PW_PORT=4183 npx playwright test` (also honoured by `npm run release:check`).
 
 ## Performance / Lighthouse
 

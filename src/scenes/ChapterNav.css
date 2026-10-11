@@ -48,14 +48,13 @@
   /* Opaque backing: the rail sits over the WebGL scene, and an independent review measured
      the active (red) item at 3.4:1 against a red evidence plane rendered behind it. axe and
      Lighthouse can't see canvas pixels, so this has to be guaranteed by design, not tested
-     by audit. Computed with the canvas behind the 0.97 backing as dark as the scene (worst
-     realistic) and as pure white (worst possible): active 4.86 / 4.57:1, idle (0.75 opacity)
-     6.6 / 6.34:1, all above WCAG AA 4.5:1. */
+     by audit. Fully opaque (it was 0.97, which let the scene show through): active item 4.86:1,
+     idle (0.75 opacity) 6.6:1, whatever the scene renders behind it. */
   .chapter-nav ul {
     flex-direction: column;
     border-left: 1px solid #2a2b31;
     padding: 6px 12px;
-    background: rgba(16, 17, 22, 0.97);
+    background: #101116;
   }
   /* 24px-tall hit areas (WCAG 2.5.8 target size): the visible text stays small, but
      each link was measured at 12px tall on a 22px pitch before this. */
@@ -70,8 +69,8 @@
   .chapter-nav {
     position: sticky;
     top: 0;
-    background: rgba(16, 17, 22, 0.96);
-    backdrop-filter: blur(6px);
+    /* Opaque: at 0.96 the page subtitle showed through the sticky bar while scrolling. */
+    background: #101116;
     border-bottom: 1px solid #2a2b31;
   }
   .chapter-nav ul {
