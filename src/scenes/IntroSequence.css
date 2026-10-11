@@ -21,7 +21,6 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  opacity: 0;
   text-align: center;
   padding: 0 24px;
 }
@@ -57,4 +56,12 @@
 .intro-skip:focus-visible {
   outline: 3px solid #df514b;
   outline-offset: 2px;
+}
+
+/* Content-sized so the wipe crosses the text for its whole duration. Hidden by clip,
+   never by opacity: the text is full colour wherever it is visible (see
+   IntroSequence.tsx -- a mid-fade opacity reveal measured 1.84:1 in Lighthouse). */
+.intro-beat-inner {
+  display: inline-block;
+  clip-path: inset(0% 100% 0% 0%);
 }

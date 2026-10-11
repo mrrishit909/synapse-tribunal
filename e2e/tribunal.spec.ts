@@ -506,22 +506,28 @@ test.describe("accessibility (axe-core)", () => {
     });
   }
 
-  test("no violations with the intro overlay showing (pre-skip)", async ({ page }) => {
+  test("no violations at any point during the intro's beat transitions, not just once settled", async ({ page }) => {
+    // An earlier version of this test waited 700ms for beat 1's opacity fade to finish
+    // before auditing. That dodged the problem instead of catching it: an opacity fade
+    // passes through low contrast by definition, and a cold Lighthouse run (which audits
+    // the first frames) flagged beat 1 at 1.84:1 mid-fade. The beats now reveal with a
+    // clip-path wipe, so the text is always full colour wherever it's visible; this test
+    // samples mid-transition to keep it that way.
+    //
+    // Scoped to .intro-sequence: the chapter content underneath is real DOM but fully
+    // covered by the opaque overlay, and axe has no notion of "covered by a sibling
+    // layer". Settled chapter contrast is covered by the other tests in this block.
     await page.goto("/");
     await page.getByRole("button", { name: /skip intro/i }).waitFor({ state: "visible" });
-    // Let beat 1's own 0.5s GSAP fade-in finish before auditing -- caught mid-fade once,
-    // diluting its text color toward the background and tripping color-contrast on a
-    // transient state, the same class of artifact as the chapter-reveal timing issue
-    // above, just on the intro's own beat animation instead.
-    await page.waitForTimeout(700);
-    // Scoped to the intro overlay itself: the chapter content underneath is real DOM
-    // (not display:none) but visually fully covered by the opaque .intro-sequence layer
-    // and, independently, still mid-reveal-animation at this point since the chapter's
-    // own ScrollTrigger fires on load regardless of the intro -- axe has no notion of
-    // "covered by an opaque sibling layer" and would flag that transient, invisible
-    // state. The chapter content's own settled-state contrast is covered by the other
-    // tests in this describe block, which explicitly wait for full opacity first.
-    const results = await new AxeBuilder({ page }).include(".intro-sequence").analyze();
-    expect(results.violations, JSON.stringify(results.violations, null, 2)).toEqual([]);
+    const start = Date.now();
+    // Beat 1 enters 0-0.5s and exits 2.5-3.0s; beat 2 enters 3.0-3.5s.
+    for (const atMs of [150, 2750, 3250]) {
+      await page.waitForTimeout(Math.max(0, atMs - (Date.now() - start)));
+      const results = await new AxeBuilder({ page }).include(".intro-sequence").withRules(["color-contrast"]).analyze();
+      expect(results.violations, `at ~${atMs}ms: ${JSON.stringify(results.violations, null, 2)}`).toEqual([]);
+    }
+    // And the full rule set once, mid-sequence.
+    const full = await new AxeBuilder({ page }).include(".intro-sequence").analyze();
+    expect(full.violations, JSON.stringify(full.violations, null, 2)).toEqual([]);
   });
 });

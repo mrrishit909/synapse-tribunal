@@ -57,11 +57,18 @@ export default function IntroSequence({ onComplete }: { onComplete: () => void }
         onCompleteRef.current()
       },
     })
+    // Each beat is revealed by a left-to-right wipe and leaves by wiping off to the right
+    // (a redaction lifting, then closing), not an opacity fade. An opacity fade passes
+    // through low contrast by definition -- a cold Lighthouse run caught beat 1 at 1.84:1
+    // mid-fade. With a clip-path wipe the text is always full colour wherever it shows.
+    const HIDDEN_LEFT = 'inset(0% 100% 0% 0%)'
+    const SHOWN = 'inset(0% 0% 0% 0%)'
+    const HIDDEN_RIGHT = 'inset(0% 0% 0% 100%)'
     BEATS.forEach((_, i) => {
       const el = beatRefs.current[i]
       if (!el) return
-      tl.fromTo(el, { opacity: 0 }, { opacity: 1, duration: 0.5 }, i * 3)
-      tl.to(el, { opacity: 0, duration: 0.5 }, i * 3 + 2.5)
+      tl.fromTo(el, { clipPath: HIDDEN_LEFT }, { clipPath: SHOWN, duration: 0.5, ease: 'power2.out' }, i * 3)
+      tl.to(el, { clipPath: HIDDEN_RIGHT, duration: 0.5, ease: 'power2.in' }, i * 3 + 2.5)
     })
     return () => {
       tl.kill()
@@ -78,15 +85,19 @@ export default function IntroSequence({ onComplete }: { onComplete: () => void }
   return (
     <div className="intro-sequence" ref={containerRef} role="region" aria-label="Opening sequence">
       {BEATS.map((beat, i) => (
-        <div
-          className="intro-beat"
-          key={beat.label}
-          ref={(el) => {
-            beatRefs.current[i] = el
-          }}
-        >
-          <p className="intro-beat-label">{beat.label}</p>
-          <p className="intro-beat-body">{beat.body}</p>
+        <div className="intro-beat" key={beat.label}>
+          {/* The clip is animated on this content-sized wrapper, not the full-screen
+              .intro-beat: a wipe across the whole viewport width only crosses the text
+              (centred, about a third of the width) for a fraction of its duration. */}
+          <div
+            className="intro-beat-inner"
+            ref={(el) => {
+              beatRefs.current[i] = el
+            }}
+          >
+            <p className="intro-beat-label">{beat.label}</p>
+            <p className="intro-beat-body">{beat.body}</p>
+          </div>
         </div>
       ))}
       <button type="button" className="intro-skip" onClick={handleSkip}>
