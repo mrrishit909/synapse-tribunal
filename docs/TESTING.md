@@ -6,7 +6,7 @@
 |---|---|---|
 | Python reference engine | `.venv/bin/python -I -m pytest tests/unit -q` | 69 |
 | TypeScript engine + components | `npx vitest run` | 25 |
-| Browser (3 engines: Chromium/Firefox/WebKit) | `npx playwright test` | 150 (50 tests x 3 browsers) |
+| Browser (3 engines: Chromium/Firefox/WebKit) | `npx playwright test` | 156 (52 tests x 3 browsers) |
 | Typecheck | `npx tsc -b` | -- |
 | Lint | `npx oxlint` | -- |
 | Everything above, plus docs/ledger/chunking checks | `npm run release:check` | -- |
@@ -34,7 +34,8 @@ silently break it).
   the rail breakpoint): the desktop rail never overlaps content, tap targets are at least 24px
   (44px on phones), the mobile bottom bar never covers the end of chapter 6, the tablet/mobile
   verdict strip shows exactly the chapter-1 badge's recomputed probability, and the rail has an
-  opaque backing (its contrast over the WebGL canvas can't be audited by axe).
+  opaque backing (its contrast over the WebGL canvas can't be audited by axe). Top-tab clicks at 768
+  and 1024px activate the clicked chapter under the sticky bar and strip.
 - WebGL: lazy-loaded separate chunk; reduced-motion static frame; zero idle render loop; genuine
   `webglcontextlost` falls back; a crash thrown inside the render loop falls back without
   blanking the page; an unrelated page error or unhandled rejection does NOT kill the renderer.

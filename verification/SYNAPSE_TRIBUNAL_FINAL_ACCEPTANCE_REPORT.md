@@ -59,13 +59,13 @@ actionable/immutable reasoning in `specifications/DATA_CONTRACT.yaml`; see `docs
 
 ## 6. Browser tests
 
-150/150 Playwright: 50 tests x Chromium, Firefox and WebKit. Coverage:
+156/156 Playwright: 52 tests x Chromium, Firefox and WebKit. Coverage:
 - all 6 interactions;
 - intro: skip, keyboard, reduced motion, on-schedule completion under scrolling, hand-off to
   chapter 1 or a deep link;
 - forward and reverse chapter reveal; scrollspy nav;
 - responsive: 6 screenshot viewports, nav geometry at 9 widths, tap targets, verdict strip
-  parity with the badge, bottom bar clearance;
+  parity with the badge, bottom bar clearance, top-tab navigation at 768 and 1024px;
 - WebGL: lazy chunk, reduced-motion static frame, idle loop, context loss, a crash inside the
   render loop, unrelated errors and rejections not killing the renderer.
 
@@ -100,7 +100,11 @@ Review 3's judgement: "not a cosmetic relabel" for navigation and context; chapt
 reflow by column count (disclosed). The rail no longer overlaps content anywhere; before, it
 covered up to 129px of the content column between ~900px and 1280px wide. Screenshots:
 `verification/SCREENSHOTS/` (per chapter at 1920x1080, 1440x900, 1024x768, 768x1024, 390x844,
-360x740, plus mid-wipe intro frames).
+360x740, plus mid-wipe intro frames). All three engines write the same filenames, so the committed set
+comes from whichever engine finished last; file-size swings between runs are that, not
+regressions. Each per-chapter shot waits until the nav marks that chapter active: an earlier
+capture used a minimal scroll and showed chapter 4 under a tab bar still (correctly)
+highlighting chapter 3.
 
 ## 9. Performance (production build, measured)
 
@@ -115,6 +119,8 @@ covered up to 129px of the content column between ~900px and 1280px wide. Screen
 | Idle render loop | none | `frameloop="demand"`, tested |
 
 Raw data: `verification/lighthouse-{desktop,mobile}.json`, `verification/FRAME_PACING.json`.
+Lighthouse was measured at `d4dfeac` and frame pacing earlier; the later code change (`6c82a86`)
+only moves the desktop rail's right offset from 20px to 8px at >=1300px.
 
 ## 10. Independent reviews
 

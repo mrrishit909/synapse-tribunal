@@ -273,10 +273,14 @@ test.describe("responsive viewports", () => {
       // a rendering quirk). Per-chapter shots also directly match this project's own
       // evidence requirement (entry per chapter at each breakpoint), not one composite.
       for (let i = 1; i <= 6; i++) {
-        await page.locator(`#chapter-${i}`).scrollIntoViewIfNeeded();
+        // Flush scroll (not scrollIntoViewIfNeeded's minimal one) and wait for the nav to
+        // agree: a minimal scroll left chapter 4 filling a tablet screenshot while the tab
+        // bar still (correctly, by its active line) highlighted chapter 3.
+        await page.locator(`#chapter-${i}`).evaluate((el) => el.scrollIntoView({ block: "start" }));
         await expect(async () => {
           expect(await opacityOf(page, `#chapter-${i}`)).toBe(1);
         }).toPass({ timeout: 4000 });
+        await expect(page.locator(`.chapter-nav a[href="#chapter-${i}"]`)).toHaveAttribute("aria-current", "true");
         await page.screenshot({ path: path.join(SCREENSHOTS_DIR, `tribunal-${vp.name}-chapter-${i}.png`) });
       }
 
@@ -322,6 +326,19 @@ test.describe("responsive compositions", () => {
       const minTap = width < 768 ? 44 : 24;
       expect(m.minW).toBeGreaterThanOrEqual(minTap);
       expect(m.minH).toBeGreaterThanOrEqual(minTap);
+    });
+  }
+
+  for (const [width, height] of [[768, 1024], [1024, 768]] as const) {
+    test(`${width}x${height}: top tab click activates that chapter under the sticky bar and strip`, async ({ page }) => {
+      await page.setViewportSize({ width, height });
+      await gotoAndSkipIntro(page);
+      for (const i of [4, 2, 6]) {
+        await page.locator(`.chapter-nav a[href="#chapter-${i}"]`).click();
+        await expect(page.locator(`.chapter-nav a[href="#chapter-${i}"]`)).toHaveAttribute("aria-current", "true", {
+          timeout: 4000,
+        });
+      }
     });
   }
 
