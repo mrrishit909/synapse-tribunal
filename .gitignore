@@ -10,3 +10,4 @@ research/data/raw/_cache/
 data/precomputed/full_test_fixture.json
 .pytest_cache/
 verification/LIVE_SCREENSHOTS/
+.DS_Store
