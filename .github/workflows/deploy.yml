@@ -1,21 +1,26 @@
-name: Deploy to GitHub Pages
+name: CI and Pages deploy
 
+# Every check runs on pushes to main and on pull requests; only a push to main deploys, and only
+# after every check job has passed (deploy `needs:` all of them).
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch: {}
 
-# Only the deploy job gets Pages write and an OIDC token; the build job (which runs
-# third-party npm install scripts) is read-only.
+# Least privilege: every job can only read the repo. The deploy job alone gets Pages write and an
+# OIDC token; no job here uses secrets.
 permissions:
   contents: read
 
 concurrency:
-  group: pages
-  cancel-in-progress: false
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  build:
+  checks:
+    name: Typecheck, lint, unit tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -27,22 +32,103 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      # The full gate (3-engine Playwright, axe, pytest) is `npm run release:check`, run
-      # locally against the exact commit before every push; CI rebuilds and re-runs the fast checks.
       - run: npx tsc -b
       - run: npx oxlint
       - run: npx vitest run
+
+  python:
+    name: Python reference engine (fixture reproducibility + pytest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - run: pip install -r requirements.txt
+      # The 14.6 MB full test-set fixture pytest checks against is gitignored (too large to
+      # commit); it is regenerated here from source exactly as the README documents. OpenML's
+      # download is cached so a flaky mirror doesn't fail the run.
+      - uses: actions/cache@v4
+        with:
+          path: research/data/raw/_cache
+          key: openml-adult-v2
+      - run: python -I research/ingest/fetch_adult.py
+      - run: python -I research/models/train.py
+      # Parity: the fixtures the site ships must be exactly what the training script produces.
+      - name: Committed fixtures reproduce from source
+        run: git diff --exit-code -- public/data
+      - run: python -I -m pytest tests/unit -q
+
+  e2e:
+    name: Playwright + axe-core (${{ matrix.browser }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps ${{ matrix.browser }}
+      - run: npx vite build
+      - run: npx playwright test --project=${{ matrix.browser }}
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-${{ matrix.browser }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
+  build:
+    name: Production build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
       - run: npm run build
-      - uses: actions/upload-pages-artifact@v3
+      # The WebGL error fallback recognises renderer crashes by the WebGLStage chunk name, so
+      # three's renderer must stay bundled only there (same check as release:check).
+      - name: WebGLRenderer bundled only in the WebGLStage chunk
+        run: |
+          files=$(grep -l "THREE.WebGLRenderer" dist/assets/*.js)
+          echo "$files"
+          test -n "$files"
+          ! echo "$files" | grep -v "/WebGLStage-"
+      - if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
         with:
           path: dist
 
   deploy:
-    needs: build
+    name: Deploy to GitHub Pages
+    needs: [checks, python, e2e, build]
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       pages: write
       id-token: write
+    concurrency:
+      group: pages
+      cancel-in-progress: false
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
