@@ -42,6 +42,36 @@ test("cinematic intro: plays, is keyboard-skippable, hands off into chapter 1", 
   await expect(page.getByText(/PREDICTED:/)).toBeVisible();
 });
 
+test("cinematic intro completes on schedule even while the page is scrolled during it", async ({ page }) => {
+  // Regression test for a real bug an independent review reproduced live: Tribunal
+  // re-renders on every scroll frame (useScrollProgress feeds the WebGL camera), and the
+  // intro's GSAP-timeline effect used to depend on the `onComplete` prop directly -- a
+  // fresh closure every parent render -- so scrolling during the 12s intro killed and
+  // restarted the timeline from scratch, repeatedly, leaving the overlay stuck well past
+  // its scripted runtime while the page had already scrolled out from under it.
+  test.setTimeout(25000);
+  await page.goto("/");
+  await expect(page.getByRole("region", { name: /opening sequence/i })).toBeVisible();
+
+  // Scroll repeatedly through most of the intro's scripted 12s -- exactly the
+  // "impatient, scrolls during a forced intro" behavior that triggered the bug. The
+  // defective version restarted the 12s timeline on every scroll-triggered re-render,
+  // so a fresh timeline starting from the LAST scroll (~10s in) wouldn't complete until
+  // ~22s; the fixed version is unaffected by scrolling and always completes at ~12s
+  // regardless -- a 16s wait window cleanly separates the two.
+  for (let i = 0; i < 25; i++) {
+    await page.mouse.wheel(0, 300);
+    await page.waitForTimeout(400);
+  }
+
+  // The intro must still complete at (approximately) its real scripted duration, not
+  // indefinitely delayed by the scrolling that happened during it.
+  await expect(page.getByRole("region", { name: /opening sequence/i })).toHaveCount(0, {
+    timeout: 6000,
+  });
+  await expect(page.getByTestId("tribunal-scene")).toBeVisible();
+});
+
 test("reduced motion: intro is skipped entirely, final state loads directly", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
@@ -321,6 +351,33 @@ test.describe("WebGL stage", () => {
     const slider = page.getByLabel(/hours worked/i);
     await slider.fill("5");
     await expect(page.getByText(/recomputed live after your edit/i)).toBeVisible();
+  });
+
+  test("an unrelated page error does not kill the WebGL renderer", async ({ page }) => {
+    // Regression test for a real bug an independent review proved empirically: the
+    // context-loss fallback's `window` 'error' listener once caught ANY uncaught error
+    // while the stage was mounted, not just WebGL-related ones. Throwing an unrelated,
+    // synchronous error unconnected to WebGL permanently killed the renderer for the
+    // rest of the session, with no recovery path (contextLost only clears on an actual
+    // webglcontextrestored event). Fixed by checking the error's filename/stack for the
+    // WebGLStage chunk before treating it as a WebGL failure.
+    await gotoAndSkipIntro(page);
+    await expect(page.getByTestId("webgl-stage")).toBeVisible();
+
+    await page.evaluate(() => {
+      // Thrown from an inline page script, not the WebGLStage chunk -- its filename/
+      // stack will not match the "webglstage" pattern the fix checks for.
+      setTimeout(() => {
+        // @ts-expect-error -- deliberately calling an undefined function
+        window.__totallyUnrelatedUndefinedFunction__();
+      }, 0);
+    });
+    await page.waitForTimeout(500);
+
+    // The WebGL stage must still be mounted and rendering; an unrelated page error must
+    // never be mistaken for a WebGL failure.
+    await expect(page.getByTestId("webgl-stage")).toBeVisible();
+    await expect(page.getByTestId("webgl-fallback")).toHaveCount(0);
   });
 });
 

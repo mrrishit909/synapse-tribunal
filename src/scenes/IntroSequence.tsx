@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import gsap from 'gsap'
 import { useReducedMotion } from '../motion/useReducedMotion'
 import './IntroSequence.css'
@@ -24,19 +24,37 @@ export default function IntroSequence({ onComplete }: { onComplete: () => void }
   const containerRef = useRef<HTMLDivElement>(null)
   const beatRefs = useRef<(HTMLDivElement | null)[]>([])
 
+  // A real bug an independent review reproduced live: the caller (Tribunal.tsx) passes
+  // `onComplete={() => setIntroDone(true)}`, a NEW closure every render. Tribunal
+  // re-renders on every scroll frame (useScrollProgress's rAF-throttled state feeds the
+  // WebGL camera), and the GSAP-timeline effect below used to depend on `onComplete`
+  // directly -- so scrolling during the intro killed and restarted the 12s timeline from
+  // scratch, repeatedly, while the page had already scrolled out from under the still-
+  // showing overlay. A ref holds the latest callback without the effect depending on its
+  // identity, so the timeline survives re-renders; only reducedMotion/dismissed (real
+  // state this component owns) can legitimately restart or skip it.
+  const onCompleteRef = useRef(onComplete)
+  // Updated in an effect, not during render (oxlint react(refs) correctly flags mutating
+  // a ref's .current in the render body as a side effect in render); useLayoutEffect
+  // runs synchronously right after each render/before paint, so the ref is always
+  // current by the time any later effect or event handler reads it.
+  useLayoutEffect(() => {
+    onCompleteRef.current = onComplete
+  })
+
   useEffect(() => {
     if (reducedMotion) {
-      onComplete()
+      onCompleteRef.current()
       return
     }
-  }, [reducedMotion, onComplete])
+  }, [reducedMotion])
 
   useEffect(() => {
     if (reducedMotion || dismissed || !containerRef.current) return
     const tl = gsap.timeline({
       onComplete: () => {
         setDismissed(true)
-        onComplete()
+        onCompleteRef.current()
       },
     })
     BEATS.forEach((_, i) => {
@@ -48,13 +66,13 @@ export default function IntroSequence({ onComplete }: { onComplete: () => void }
     return () => {
       tl.kill()
     }
-  }, [reducedMotion, dismissed, onComplete])
+  }, [reducedMotion, dismissed])
 
   if (reducedMotion || dismissed) return null
 
   function handleSkip() {
     setDismissed(true)
-    onComplete()
+    onCompleteRef.current()
   }
 
   return (

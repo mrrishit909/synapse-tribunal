@@ -28,14 +28,26 @@ export default function WebGLStage({ proba, attribution, scrollProgress, reduced
   // throw an uncaught exception (calling a GL method on the now-invalid context) from
   // inside its own requestAnimationFrame-driven render call -- NOT during React's render
   // phase, so WebGLErrorBoundary (which only catches render-phase errors) never sees it;
-  // the exception surfaces as a `window` 'error' event instead, and with no handler for
-  // that, it was silently crashing more than this component could see. This listener is
-  // the actual fix for that gap; the error boundary (in Tribunal.tsx) remains as a second
-  // layer for genuine React-render-phase failures. Scoped to "while this stage is
-  // mounted" since by then any uncaught error reaching window level is overwhelmingly
-  // likely to be from the WebGL subsystem, not unrelated app code.
+  // the exception surfaces as a `window` 'error' event instead. An earlier version of
+  // this listener caught EVERY window error while mounted, not just WebGL-related ones --
+  // an independent review proved this empirically (threw an unrelated, synchronous JS
+  // error unconnected to WebGL; the renderer was permanently killed for the rest of the
+  // session with no recovery path, since contextLost only clears on an actual
+  // webglcontextrestored event). Scoped here instead to errors that actually originate
+  // from the WebGL chunk: its filename carries a stable "WebGLStage" prefix in both the
+  // production build (content-hashed chunk name) and dev (module path), checked against
+  // both event.filename and the error's own stack as a fallback for engines that omit
+  // filename on same-origin errors.
   useEffect(() => {
-    const onWindowError = () => setContextLost(true)
+    const isFromWebGLChunk = (event: ErrorEvent): boolean => {
+      const needle = /webglstage/i
+      if (event.filename && needle.test(event.filename)) return true
+      const stack = event.error instanceof Error ? event.error.stack : undefined
+      return !!stack && needle.test(stack)
+    }
+    const onWindowError = (event: ErrorEvent) => {
+      if (isFromWebGLChunk(event)) setContextLost(true)
+    }
     window.addEventListener('error', onWindowError)
     return () => window.removeEventListener('error', onWindowError)
   }, [])

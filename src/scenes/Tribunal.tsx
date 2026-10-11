@@ -1,4 +1,4 @@
-import { Suspense, lazy, useRef, useState } from 'react'
+import { Suspense, lazy, useCallback, useRef, useState } from 'react'
 import { findFeasibleFlip } from '../engine/counterfactual'
 import { featureLabel, formatProbability, formatValue } from '../engine/format'
 import { groupAttributionByFeature, logisticAttribution, logisticProba } from '../engine/model'
@@ -88,6 +88,10 @@ export default function Tribunal() {
   const isMobileViewport = useIsMobileViewport()
   const sceneRef = useRef<HTMLElement>(null)
   const [introDone, setIntroDone] = useState(false)
+  // Stable identity across every re-render (Tribunal re-renders on every scroll frame via
+  // useScrollProgress) -- defense in depth alongside IntroSequence's own ref-based fix
+  // for the same bug class (see that file's comment for the reproduced failure mode).
+  const handleIntroComplete = useCallback(() => setIntroDone(true), [])
 
   const [selectedCaseId, setSelectedCaseId] = useState<number | null>(null)
   const [activeModel, setActiveModel] = useState<'logistic' | 'boosting'>('logistic')
@@ -235,7 +239,7 @@ export default function Tribunal() {
           </Suspense>
         </WebGLErrorBoundary>
       )}
-      {!introDone && <IntroSequence onComplete={() => setIntroDone(true)} />}
+      {!introDone && <IntroSequence onComplete={handleIntroComplete} />}
       <ChapterNav />
       <main className="tribunal-scene" ref={sceneRef} data-testid="tribunal-scene">
         <header className="dossier-header">
