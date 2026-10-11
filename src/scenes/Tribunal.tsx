@@ -93,7 +93,17 @@ export default function Tribunal() {
   // Stable identity across every re-render (Tribunal re-renders on every scroll frame via
   // useScrollProgress) -- defense in depth alongside IntroSequence's own ref-based fix
   // for the same bug class (see that file's comment for the reproduced failure mode).
-  const handleIntroComplete = useCallback(() => setIntroDone(true), [])
+  const handleIntroComplete = useCallback(() => {
+    setIntroDone(true)
+    // Scrolling during the intro moves the page under the opaque overlay, so when it lifted
+    // the user landed mid-page (an independent review measured scrollY 2040) with no idea
+    // how they got there. That position is accidental; hand off to where the intro points.
+    // A chapter deep link (#chapter-4) is respected rather than discarded. 'instant'
+    // because index.css sets smooth scroll-behavior, which would visibly animate this jump.
+    const target = window.location.hash ? document.getElementById(window.location.hash.slice(1)) : null
+    if (target) target.scrollIntoView({ behavior: 'instant' })
+    else window.scrollTo({ top: 0, behavior: 'instant' })
+  }, [])
 
   const [selectedCaseId, setSelectedCaseId] = useState<number | null>(null)
   const [activeModel, setActiveModel] = useState<'logistic' | 'boosting'>('logistic')

@@ -13,7 +13,8 @@ const BEATS = [
 /**
  * 0-12s cinematic opening (PROJECT_03.md storyboard: 0-3s sealed dossier, 3-6s model
  * vote, 6-9s evidence unfolds, 9-12s confidence challenged/inspector opens). Hands off
- * into chapter 1 by fading out, per the Design Principles handoff rule ("the hero visual
+ * into chapter 1 by unmounting the overlay once the last beat wipes off, per the Design
+ * Principles handoff rule ("the hero visual
  * must persist or morph into the functional scene, never disappear into an unrelated
  * UI") -- the same dossier typography and palette the intro uses IS chapter 1's own.
  * Reduced motion skips straight to the dismissed state (dossier contract requirement).

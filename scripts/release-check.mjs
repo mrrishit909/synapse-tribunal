@@ -76,6 +76,24 @@ run(
 // --- Production build ---
 run("production build (vite build)", "npx vite build");
 
+// --- Chunking invariant the WebGL error fallback depends on ---
+// src/webgl/WebGLStage.tsx recognises WebGL failures by "webglstage" in the error's
+// filename/stack. That only works while three's renderer is bundled INTO that chunk; a
+// vendor split would make real renderer crashes unrecognisable. Pinned here so a config
+// change can't break it silently.
+try {
+  const assets = join(ROOT, "dist", "assets");
+  const chunks = execSync(`ls ${assets}`, { encoding: "utf-8" }).split("\n").filter((f) => f.endsWith(".js"));
+  const withRenderer = chunks.filter((f) => readFileSync(join(assets, f), "utf-8").includes("THREE.WebGLRenderer"));
+  check(
+    "three's WebGLRenderer is bundled only in the WebGLStage chunk",
+    withRenderer.length > 0 && withRenderer.every((f) => /^WebGLStage-/.test(f)),
+    `chunks containing THREE.WebGLRenderer: ${withRenderer.join(", ") || "(none)"}`,
+  );
+} catch (err) {
+  check("three's WebGLRenderer is bundled only in the WebGLStage chunk", false, String(err.message));
+}
+
 // --- E2E across all 3 browsers, including axe-core ---
 try {
   execSync('pkill -f "vite preview"', { stdio: "ignore" });

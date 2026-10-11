@@ -65,3 +65,12 @@
   display: inline-block;
   clip-path: inset(0% 100% 0% 0%);
 }
+
+/* The intro overlay sits outside .tribunal-scene, so Tribunal.css's 44px touch-target rule
+   didn't reach this button (measured 94x34 on mobile by an independent review). */
+@media (max-width: 767px), (pointer: coarse) {
+  .intro-skip {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}

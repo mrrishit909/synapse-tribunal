@@ -47,10 +47,15 @@
     right: 20px;
     transform: translateY(-50%);
   }
+  /* Opaque backing: the rail sits over the WebGL scene, and an independent review measured
+     the active (red) item at 3.4:1 against a red evidence plane rendered behind it. axe and
+     Lighthouse can't see canvas pixels, so this has to be guaranteed by design, not tested
+     by audit: on this backing the accent is 4.86:1 and idle items about 7.8:1. */
   .chapter-nav ul {
     flex-direction: column;
     border-left: 1px solid #2a2b31;
-    padding-left: 12px;
+    padding: 6px 12px;
+    background: rgba(16, 17, 22, 0.94);
   }
   /* 24px-tall hit areas (WCAG 2.5.8 target size): the visible text stays small, but
      each link was measured at 12px tall on a 22px pitch before this. */

@@ -70,6 +70,16 @@ test("cinematic intro completes on schedule even while the page is scrolled duri
     timeout: 6000,
   });
   await expect(page.getByTestId("tribunal-scene")).toBeVisible();
+  // ...and hands off to chapter 1, not wherever the hidden page drifted to underneath the
+  // opaque overlay (an independent review measured scrollY 2040 here before the fix).
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+  await expect(page.locator("#chapter-1-heading")).toBeInViewport();
+});
+
+test("intro hand-off respects a chapter deep link", async ({ page }) => {
+  await page.goto("/#chapter-4");
+  await page.getByRole("button", { name: /skip intro/i }).click();
+  await expect(page.locator("#chapter-4-heading")).toBeInViewport();
 });
 
 test("reduced motion: intro is skipped entirely, final state loads directly", async ({ page }) => {
@@ -356,6 +366,28 @@ test.describe("responsive compositions", () => {
     });
   }
 
+  test("desktop: the side rail has an opaque backing (its text can't sit directly on the WebGL scene)", async ({ page }) => {
+    // axe/Lighthouse can't see canvas pixels, so this can't be caught by an audit: an
+    // independent review measured the active rail item at 3.4:1 over a red evidence plane.
+    // On the backing the accent is 4.86:1. Pin the backing itself.
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await gotoAndSkipIntro(page);
+    const alpha = await page.locator(".chapter-nav ul").evaluate((el) => {
+      const m = getComputedStyle(el).backgroundColor.match(/rgba?\(([^)]+)\)/);
+      const parts = m ? m[1].split(",").map(Number) : [];
+      return parts.length === 4 ? parts[3] : parts.length === 3 ? 1 : 0;
+    });
+    expect(alpha).toBeGreaterThanOrEqual(0.9);
+  });
+
+  test("mobile: Skip intro meets the 44px touch-target minimum", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/");
+    const box = await page.getByRole("button", { name: /skip intro/i }).boundingBox();
+    expect(box!.height).toBeGreaterThanOrEqual(44);
+    expect(box!.width).toBeGreaterThanOrEqual(44);
+  });
+
   test("desktop: no verdict strip (the side rail composition has room for the full layout)", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await gotoAndSkipIntro(page);
@@ -469,6 +501,40 @@ test.describe("WebGL stage", () => {
     // never be mistaken for a WebGL failure.
     await expect(page.getByTestId("webgl-stage")).toBeVisible();
     await expect(page.getByTestId("webgl-fallback")).toHaveCount(0);
+  });
+
+  test("an unrelated unhandled promise rejection does not kill the WebGL renderer", async ({ page }) => {
+    await gotoAndSkipIntro(page);
+    await expect(page.getByTestId("webgl-stage")).toBeVisible();
+    await page.evaluate(() => {
+      void Promise.reject(new Error("unrelated async failure"));
+    });
+    await page.waitForTimeout(500);
+    await expect(page.getByTestId("webgl-stage")).toBeVisible();
+    await expect(page.getByTestId("webgl-fallback")).toHaveCount(0);
+  });
+
+  test("a crash inside the WebGL render loop falls back to 2D without blanking the page", async ({ page }) => {
+    // The case the scoped `window` error listener exists for: an exception thrown from
+    // inside three's renderer during R3F's own rAF-driven render, not React's render phase
+    // (so no error boundary can catch it). Simulated, as the independent review did, by
+    // making draw calls throw, then triggering a render by scrolling the camera.
+    await gotoAndSkipIntro(page);
+    await expect(page.getByTestId("webgl-stage")).toBeVisible();
+    await page.evaluate(() => {
+      for (const proto of [WebGLRenderingContext.prototype, WebGL2RenderingContext.prototype]) {
+        proto.drawElements = () => {
+          throw new Error("simulated GPU failure");
+        };
+        proto.drawArrays = () => {
+          throw new Error("simulated GPU failure");
+        };
+      }
+    });
+    await page.locator("#chapter-3").evaluate((el) => el.scrollIntoView({ block: "start" }));
+    await expect(page.getByTestId("webgl-fallback")).toBeVisible({ timeout: 5000 });
+    await expect(page.locator("main")).toBeVisible();
+    await expect(page.locator("h2")).toHaveCount(6);
   });
 });
 

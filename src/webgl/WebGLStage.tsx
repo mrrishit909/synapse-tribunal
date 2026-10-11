@@ -38,18 +38,31 @@ export default function WebGLStage({ proba, attribution, scrollProgress, reduced
   // production build (content-hashed chunk name) and dev (module path), checked against
   // both event.filename and the error's own stack as a fallback for engines that omit
   // filename on same-origin errors.
+  //
+  // This depends on three/R3F/drei being bundled INTO the WebGLStage chunk: a throw from
+  // three inside R3F's render loop only matches if those frames carry the chunk's name. A
+  // future vendor/manualChunks split would silently break it, so `npm run release:check`
+  // asserts three's renderer code lives only in the WebGLStage chunk.
+  // Async failures (rejected loader/shader promises) arrive as `unhandledrejection`, not
+  // `error`, and get the same stack check.
   useEffect(() => {
-    const isFromWebGLChunk = (event: ErrorEvent): boolean => {
-      const needle = /webglstage/i
-      if (event.filename && needle.test(event.filename)) return true
-      const stack = event.error instanceof Error ? event.error.stack : undefined
-      return !!stack && needle.test(stack)
-    }
+    const needle = /webglstage/i
+    const stackMatches = (err: unknown) =>
+      err instanceof Error && !!err.stack && needle.test(err.stack)
     const onWindowError = (event: ErrorEvent) => {
-      if (isFromWebGLChunk(event)) setContextLost(true)
+      if ((event.filename && needle.test(event.filename)) || stackMatches(event.error)) {
+        setContextLost(true)
+      }
+    }
+    const onRejection = (event: PromiseRejectionEvent) => {
+      if (stackMatches(event.reason)) setContextLost(true)
     }
     window.addEventListener('error', onWindowError)
-    return () => window.removeEventListener('error', onWindowError)
+    window.addEventListener('unhandledrejection', onRejection)
+    return () => {
+      window.removeEventListener('error', onWindowError)
+      window.removeEventListener('unhandledrejection', onRejection)
+    }
   }, [])
 
   if (!webglAvailable || contextLost) {
