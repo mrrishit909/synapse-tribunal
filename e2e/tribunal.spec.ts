@@ -60,7 +60,12 @@ test("cinematic intro completes on schedule even while the page is scrolled duri
   // so a fresh timeline starting from the LAST scroll (~10s in) wouldn't complete until
   // ~22s; the fixed version is unaffected by scrolling and always completes at ~12s
   // regardless -- a 16s wait window cleanly separates the two.
-  for (let i = 0; i < 25; i++) {
+  // Bounded by elapsed time, not a fixed count: under CPU load a fixed 25 x 400ms loop
+  // overran the 12s intro, so the last few wheels scrolled the page AFTER the hand-off (a
+  // real user doing that should scroll) and the scrollY 0 check failed on test timing alone.
+  // Stopping at 9s still leaves the defective version needing ~21s, far past the wait below.
+  const t0 = Date.now();
+  while (Date.now() - t0 < 9000) {
     await page.mouse.wheel(0, 300);
     await page.waitForTimeout(400);
   }
