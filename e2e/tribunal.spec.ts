@@ -4,10 +4,11 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const SCREENSHOTS_DIR = path.join(__dirname, "..", "verification", "SCREENSHOTS");
+// LIVE_URL runs (see playwright.config.ts) write to LIVE_SCREENSHOTS/ so they never overwrite local evidence.
+const SCREENSHOTS_DIR = path.join(__dirname, "..", "verification", process.env.LIVE_URL ? "LIVE_SCREENSHOTS" : "SCREENSHOTS");
 
 async function gotoAndSkipIntro(page: Page) {
-  await page.goto("/");
+  await page.goto("./");
   // .isVisible() does not auto-wait -- called immediately after goto, before React has
   // rendered, it can return false and silently skip the click, leaving the intro overlay
   // active for the rest of the test (a real bug this caught: a screenshot meant to be of
@@ -30,7 +31,7 @@ async function opacityOf(page: Page, selector: string) {
 }
 
 test("cinematic intro: plays, is keyboard-skippable, hands off into chapter 1", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("./");
   await expect(page.getByRole("region", { name: /opening sequence/i })).toBeVisible();
 
   const skip = page.getByRole("button", { name: /skip intro/i });
@@ -50,7 +51,7 @@ test("cinematic intro completes on schedule even while the page is scrolled duri
   // restarted the timeline from scratch, repeatedly, leaving the overlay stuck well past
   // its scripted runtime while the page had already scrolled out from under it.
   test.setTimeout(25000);
-  await page.goto("/");
+  await page.goto("./");
   await expect(page.getByRole("region", { name: /opening sequence/i })).toBeVisible();
 
   // Scroll repeatedly through most of the intro's scripted 12s -- exactly the
@@ -77,14 +78,14 @@ test("cinematic intro completes on schedule even while the page is scrolled duri
 });
 
 test("intro hand-off respects a chapter deep link", async ({ page }) => {
-  await page.goto("/#chapter-4");
+  await page.goto("./#chapter-4");
   await page.getByRole("button", { name: /skip intro/i }).click();
   await expect(page.locator("#chapter-4-heading")).toBeInViewport();
 });
 
 test("reduced motion: intro is skipped entirely, final state loads directly", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.goto("/");
+  await page.goto("./");
   await expect(page.getByRole("region", { name: /opening sequence/i })).toHaveCount(0);
   await expect(page.getByTestId("tribunal-scene")).toBeVisible();
   const opacity = await opacityOf(page, "#chapter-1");
@@ -399,7 +400,7 @@ test.describe("responsive compositions", () => {
 
   test("mobile: Skip intro meets the 44px touch-target minimum", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/");
+    await page.goto("./");
     const box = await page.getByRole("button", { name: /skip intro/i }).boundingBox();
     expect(box!.height).toBeGreaterThanOrEqual(44);
     expect(box!.width).toBeGreaterThanOrEqual(44);
@@ -427,7 +428,7 @@ test.describe("WebGL stage", () => {
 
   test("reduced motion: camera holds a static position across scroll (one static frame, not slowed motion)", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
-    await page.goto("/");
+    await page.goto("./");
     await expect(page.getByTestId("tribunal-scene")).toBeVisible();
     await expect(page.getByTestId("webgl-stage")).toBeVisible();
 
@@ -600,7 +601,7 @@ test.describe("accessibility (axe-core)", () => {
     // Scoped to .intro-sequence: the chapter content underneath is real DOM but fully
     // covered by the opaque overlay, and axe has no notion of "covered by a sibling
     // layer". Settled chapter contrast is covered by the other tests in this block.
-    await page.goto("/");
+    await page.goto("./");
     await page.getByRole("button", { name: /skip intro/i }).waitFor({ state: "visible" });
     const start = Date.now();
     // Beat 1 enters 0-0.5s and exits 2.5-3.0s; beat 2 enters 3.0-3.5s.

@@ -8,7 +8,7 @@ import { writeFileSync } from "node:fs";
 
 const browser = await chromium.launch({ headless: false });
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
-await page.goto("http://localhost:4173/");
+await page.goto("http://localhost:4173/synapse-tribunal/");
 await Promise.race([
   page.getByRole("button", { name: /skip intro/i }).waitFor({ state: "visible" }),
   page.getByTestId("tribunal-scene").waitFor({ state: "visible" }),
