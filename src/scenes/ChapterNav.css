@@ -44,7 +44,10 @@
   .chapter-nav {
     position: fixed;
     top: 50%;
-    right: 20px;
+    /* 8px + the backing's 12px right padding keeps text 20px from the edge. At 1300px the
+       rail clears the content column by ~10px; widening it (or this offset) re-creates the
+       overlap the responsive test at 1300x800 catches. */
+    right: 8px;
     transform: translateY(-50%);
   }
   /* Opaque backing: the rail sits over the WebGL scene, and an independent review measured
