@@ -10,8 +10,9 @@ https://mrrishit909.github.io/synapse-tribunal/, case study https://mrrishit909.
 Record: `verification/SYNAPSE_TRIBUNAL_PUBLICATION_REPORT.md`. Every push to `main` redeploys
 via `.github/workflows/deploy.yml`, so run `npm run release:check` before pushing.
 
-**Last full verification:** `npm run release:check` PASS on every criterion: 189/189 Playwright
-(63 tests x Chromium/Firefox/WebKit, including axe-core), 25/25 vitest, 69/69 pytest, clean
+**Last full verification:** `npm run release:check` PASS on every criterion (2026-10-11 maintenance
+pass: opaque panels/nav, palette-drawn sliders, square selects): 210/210 Playwright
+(70 tests x Chromium/Firefox/WebKit, including axe-core), 25/25 vitest, 69/69 pytest, clean
 tsc/oxlint/build, required docs present, ledger has nothing `unstarted`/`blocked`, three's renderer
 bundled only in the WebGLStage chunk.
 
@@ -41,7 +42,7 @@ screenshots, push, wait for the Pages run, confirm live assets match `dist/`, th
 ```
 cd ~/synapse-tribunal
 pkill -f "vite preview"          # another project on this machine has squatted port 4173 before
-npm run release:check             # runs everything below and more
+npm run release:check             # runs everything below and more (PW_PORT=4183 to use another port)
 export SSL_CERT_FILE=$(.venv/bin/python -c "import certifi; print(certifi.where())")
 .venv/bin/python -I -m pytest tests/unit -q
 npx tsc -b && npx oxlint && npx vitest run && npx vite build && npx playwright test
